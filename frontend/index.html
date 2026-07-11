@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EarnFlow — Do tasks. Get paid. Watch it flow.</title>
+<link rel="stylesheet" href="/assets/css/theme.css" />
+</head>
+<body>
+
+<!-- ==================== LANDING (shown when logged out) ==================== -->
+<div id="ef-landing">
+  <header class="ef-container" style="display:flex;justify-content:space-between;align-items:center;padding-top:24px;">
+    <div class="ef-logo">Earn<span>Flow</span></div>
+    <nav>
+      <button class="ef-btn ef-btn-ghost" id="btn-login">Log in</button>
+      <button class="ef-btn ef-btn-primary" id="btn-signup">Start earning</button>
+    </nav>
+  </header>
+
+  <section class="ef-hero ef-container">
+    <h1>Every task you finish<br>writes a new line.</h1>
+    <p class="tagline">Surveys, offers, ads, and more — completed tasks turn into real money you can withdraw to your bank in Nigeria or worldwide.</p>
+
+    <div class="ef-passbook" id="ef-live-ledger">
+      <!-- populated by animations.js: rolling sample of recent completions -->
+    </div>
+
+    <div style="margin-top:36px;">
+      <button class="ef-btn ef-btn-primary" id="btn-hero-signup">Create free account</button>
+      <button class="ef-btn ef-btn-ghost" id="btn-how">How it works</button>
+    </div>
+  </section>
+
+  <section class="ef-container ef-reveal" style="padding:48px 0;">
+    <div class="ef-grid" id="ef-category-preview">
+      <!-- populated by app.js from /api tasks/categories, static fallback below -->
+    </div>
+  </section>
+</div>
+
+<!-- ==================== DASHBOARD (shown when logged in) ==================== -->
+<div id="ef-app" class="ef-app" style="display:none;">
+  <aside class="ef-sidebar">
+    <div class="ef-logo">Earn<span>Flow</span></div>
+    <nav class="ef-nav">
+      <a href="#/dashboard" class="active">🏠 Dashboard</a>
+      <a href="#/tasks">🧩 Tasks</a>
+      <a href="#/offers">🎯 Offers</a>
+      <a href="#/surveys">📋 Surveys</a>
+      <a href="#/withdraw">💸 Withdraw</a>
+      <a href="#/referrals">🔗 Referrals</a>
+      <a href="#/profile">👤 Profile</a>
+    </nav>
+  </aside>
+
+  <main class="ef-main">
+    <div class="ef-balance-header ef-reveal">
+      <div>
+        <div class="label">Available balance</div>
+        <div class="figure" id="ef-balance-figure">
+          <span id="ef-currency">₦</span><span class="ef-balance" id="ef-balance-digits">0.00</span>
+        </div>
+      </div>
+      <button class="ef-btn ef-btn-primary" id="btn-withdraw">Withdraw</button>
+    </div>
+
+    <h3 style="font-family:var(--font-display);color:#fff;">Recommended for you</h3>
+    <div class="ef-grid" id="ef-task-feed">
+      <!-- populated by dashboard.js via GET /api/tasks/feed -->
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/api.js"></script>
+<script src="/assets/js/animations.js"></script>
+<script src="/assets/js/app.js"></script>
+<script src="/assets/js/dashboard.js"></script>
+</body>
+</html>

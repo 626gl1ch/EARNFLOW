@@ -1,0 +1,230 @@
+/* ==========================================================================
+   EARNFLOW THEME — "The Passbook"
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --ink: #0B2B26;
+  --ink-2: #0F3630;
+  --emerald: #12664F;
+  --emerald-2: #17805F;
+  --gold: #E8B84B;
+  --gold-soft: #F3D48A;
+  --mint: #BFE8D9;
+  --coral: #E2604A;
+  --paper: #F6F3EC;
+  --line: rgba(191, 232, 217, 0.14);
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius: 14px;
+  --shadow-lift: 0 12px 32px rgba(0,0,0,0.28);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--mint);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ef-container { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+/* -------------------- Landing hero: the animated passbook -------------------- */
+
+.ef-hero {
+  padding: 96px 0 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.ef-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.ef-hero p.tagline {
+  color: var(--mint);
+  opacity: 0.85;
+  font-size: 1.15rem;
+  margin-bottom: 40px;
+}
+
+.ef-passbook {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px 0;
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+  position: relative;
+}
+
+.ef-passbook::before {
+  content: "LIVE ACTIVITY";
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  opacity: 0.7;
+}
+
+.ef-ledger-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 24px;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  border-bottom: 1px dashed var(--line);
+  animation: ef-line-in 0.5s ease both;
+}
+.ef-ledger-line:last-child { border-bottom: none; }
+.ef-ledger-line .amt { color: var(--gold); font-weight: 600; }
+
+@keyframes ef-line-in {
+  from { opacity: 0; transform: translateY(-8px); background: rgba(232,184,75,0.12); }
+  to   { opacity: 1; transform: translateY(0); background: transparent; }
+}
+
+/* Odometer-style balance digits */
+.ef-balance {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  display: inline-flex;
+  gap: 2px;
+}
+.ef-digit {
+  display: inline-block;
+  transition: transform 0.35s cubic-bezier(.2,.9,.3,1);
+}
+.ef-digit.flip { animation: ef-digit-flip 0.4s ease; }
+@keyframes ef-digit-flip {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  60%  { transform: translateY(8%); opacity: 1; }
+  100% { transform: translateY(0); }
+}
+
+/* -------------------- CTA buttons -------------------- */
+
+.ef-btn {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 14px 30px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.ef-btn-primary { background: var(--gold); color: var(--ink); }
+.ef-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(232,184,75,0.35); }
+.ef-btn-ghost { background: transparent; color: var(--mint); border: 1px solid var(--line); margin-left: 12px; }
+.ef-btn-ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+/* -------------------- Dashboard shell -------------------- */
+
+.ef-app {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.ef-sidebar {
+  background: var(--ink-2);
+  border-right: 1px solid var(--line);
+  padding: 28px 20px;
+}
+.ef-logo { font-family: var(--font-display); font-size: 1.4rem; color: #fff; margin-bottom: 32px; }
+.ef-logo span { color: var(--gold); }
+
+.ef-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: var(--mint);
+  text-decoration: none;
+  font-size: 0.94rem;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.ef-nav a:hover, .ef-nav a.active { background: rgba(232,184,75,0.1); opacity: 1; color: var(--gold-soft); }
+
+.ef-main { padding: 32px 40px; }
+
+.ef-balance-header {
+  background: linear-gradient(135deg, var(--emerald), var(--emerald-2));
+  border-radius: 20px;
+  padding: 28px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-lift);
+}
+.ef-balance-header .label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; }
+.ef-balance-header .figure {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.ef-balance-header .figure small { font-family: var(--font-mono); font-size: 1.1rem; opacity: 0.7; }
+
+/* -------------------- Task cards -------------------- */
+
+.ef-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.ef-card {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: transform 0.18s ease, border-color 0.18s ease;
+  cursor: pointer;
+}
+.ef-card:hover { transform: translateY(-4px); border-color: rgba(232,184,75,0.4); }
+.ef-card .cat { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); opacity: 0.85; }
+.ef-card h3 { font-family: var(--font-display); font-size: 1.1rem; margin: 8px 0; color: #fff; }
+.ef-card .payout { font-family: var(--font-mono); color: var(--gold-soft); font-size: 1rem; }
+
+/* -------------------- Section reveal on load -------------------- */
+
+.ef-reveal { animation: ef-fade-up 0.6s ease both; }
+@keyframes ef-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ef-reveal, .ef-ledger-line, .ef-digit.flip { animation: none !important; }
+}
+
+@media (max-width: 860px) {
+  .ef-app { grid-template-columns: 1fr; }
+  .ef-sidebar { display: none; } /* Antigravity: replace with a mobile bottom-nav */
+  .ef-main { padding: 20px; }
+}
