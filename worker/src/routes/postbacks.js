@@ -1,4 +1,6 @@
 import { serviceClient } from '../lib/supabase.js';
+import { verifyWebhookSignature } from '../lib/paystack.js';
+import { processReferralBonus } from '../lib/referral.js';
 
 /**
  * Server-to-server postback endpoints for CPA / survey / ad networks.
@@ -14,17 +16,19 @@ export async function handlePostbacks(request, env, ctx, json, subpath) {
   const supabase = serviceClient(env);
   const url = new URL(request.url);
 
-  if (subpath === '/cpalead') return handleGenericCpaPostback(request, url, env, supabase, json, 'cpalead');
-  if (subpath === '/adgatemedia') return handleGenericCpaPostback(request, url, env, supabase, json, 'adgatemedia');
-  if (subpath === '/offertoro') return handleGenericCpaPostback(request, url, env, supabase, json, 'offertoro');
-  if (subpath === '/mylead') return handleGenericCpaPostback(request, url, env, supabase, json, 'mylead');
-  if (subpath === '/bitlabs') return handleGenericCpaPostback(request, url, env, supabase, json, 'bitlabs');
-  if (subpath === '/cpxresearch') return handleGenericCpaPostback(request, url, env, supabase, json, 'cpxresearch');
+  if (subpath === '/paystack') return handlePaystackPostback(request, env, supabase, json);
+
+  if (subpath === '/cpalead') return handleGenericCpaPostback(request, url, env, supabase, json, 'cpalead', ctx);
+  if (subpath === '/adgatemedia') return handleGenericCpaPostback(request, url, env, supabase, json, 'adgatemedia', ctx);
+  if (subpath === '/offertoro') return handleGenericCpaPostback(request, url, env, supabase, json, 'offertoro', ctx);
+  if (subpath === '/mylead') return handleGenericCpaPostback(request, url, env, supabase, json, 'mylead', ctx);
+  if (subpath === '/bitlabs') return handleGenericCpaPostback(request, url, env, supabase, json, 'bitlabs', ctx);
+  if (subpath === '/cpxresearch') return handleGenericCpaPostback(request, url, env, supabase, json, 'cpxresearch', ctx);
 
   return null;
 }
 
-async function handleGenericCpaPostback(request, url, env, supabase, json, provider) {
+async function handleGenericCpaPostback(request, url, env, supabase, json, provider, ctx) {
   // Each network's exact query param names differ (subid, s1, uid, etc.) —
   // Antigravity should map each provider's real postback spec here. The
   // shape below is the common pattern across most GPT-style networks.
@@ -112,5 +116,90 @@ async function handleGenericCpaPostback(request, url, env, supabase, json, provi
   const { error: payErr } = await supabase.rpc('complete_task', { p_task_completion_id: completion.id });
   if (payErr) return json({ error: 'payout_failed', message: payErr.message }, 500);
 
+  // Trigger referral bonus asynchronously
+  ctx.waitUntil(
+    processReferralBonus(
+      supabase,
+      userId,
+      task.payout_minor,
+      task.currency,
+      completion.id
+    )
+  );
+
   return json({ ok: true, action: 'paid' });
+}
+
+async function handlePaystackPostback(request, env, supabase, json) {
+  if (request.method !== 'POST') {
+    return json({ error: 'method_not_allowed' }, 405);
+  }
+
+  const signatureHeader = request.headers.get('x-paystack-signature');
+  if (!signatureHeader) {
+    return json({ error: 'missing_signature' }, 401);
+  }
+
+  const rawBody = await request.text();
+  const isValid = await verifyWebhookSignature(rawBody, signatureHeader, env);
+  if (!isValid) {
+    return json({ error: 'invalid_signature' }, 401);
+  }
+
+  const payload = JSON.parse(rawBody);
+  const event = payload.event;
+  const data = payload.data || {};
+  const reference = data.reference || '';
+
+  if (!reference.startsWith('earnflow_')) {
+    return json({ ok: true, message: 'ignored_reference' });
+  }
+
+  const withdrawalId = reference.replace('earnflow_', '');
+
+  const { data: w, error: wErr } = await supabase
+    .from('withdrawals')
+    .select('*')
+    .eq('id', withdrawalId)
+    .single();
+
+  if (wErr || !w) {
+    return json({ error: 'withdrawal_not_found' }, 404);
+  }
+
+  if (['paid', 'failed', 'reversed'].includes(w.status)) {
+    return json({ ok: true, message: 'already_processed' });
+  }
+
+  if (event === 'transfer.success') {
+    await supabase
+      .from('withdrawals')
+      .update({ status: 'paid', processed_at: new Date().toISOString() })
+      .eq('id', w.id);
+
+    return json({ ok: true, action: 'marked_paid' });
+  }
+
+  if (event === 'transfer.failed' || event === 'transfer.reversed') {
+    const failureReason = data.gateway_response || 'Paystack transfer failed';
+
+    // Reverse the ledger debit so the user's balance is restored
+    await supabase.from('ledger_entries').insert({
+      user_id: w.user_id,
+      entry_type: 'withdrawal_reversal',
+      amount_minor: w.amount_minor,
+      currency: w.currency,
+      related_withdrawal_id: w.id,
+      memo: `Failed transfer: ${failureReason}`,
+    });
+
+    await supabase
+      .from('withdrawals')
+      .update({ status: 'failed', failure_reason: failureReason, processed_at: new Date().toISOString() })
+      .eq('id', w.id);
+
+    return json({ ok: true, action: 'reversed' });
+  }
+
+  return json({ ok: true, message: 'unhandled_event' });
 }

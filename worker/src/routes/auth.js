@@ -1,11 +1,18 @@
 import { serviceClient, getUserFromRequest } from '../lib/supabase.js';
 import { checkIpRisk, recordIpRiskCheck } from '../lib/ipqs.js';
+import { isRateLimited } from '../lib/ratelimit.js';
 
 export async function handleAuth(request, env, ctx, json, subpath) {
   const supabase = serviceClient(env);
   const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
 
+  // Apply IP-based rate limiting on auth endpoints
+  if (await isRateLimited(ip, 'ip', env, { maxTokens: 10, refillRate: 0.2 })) {
+    return json({ error: 'rate_limited', message: 'Too many auth requests. Please slow down.' }, 429);
+  }
+
   // POST /api/auth/post-signup — called by the frontend right after Supabase Auth
+
   // sign-up succeeds, to run our own country/fraud pipeline against the new user.
   if (subpath === '/post-signup' && request.method === 'POST') {
     const { user } = await getUserFromRequest(request, env);
