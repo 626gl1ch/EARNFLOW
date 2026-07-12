@@ -3,7 +3,25 @@
  * Antigravity: wire `getSupabaseSession()` up to the actual Supabase JS
  * client once auth is initialized (mirrors the SnipeJob auth pattern).
  */
-const EF_API_BASE = window.EF_API_BASE || 'https://api.earnflow.app'; // set per environment
+const EF_API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8787'
+  : 'https://earnflow-api.daniellancce1.workers.dev'; // production API url
+
+const SUPABASE_URL = 'https://mdmpcxtjwnovbhidwwhj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_6l7eSezczJta6rW2gomSqA_btj4X1h_';
+
+let sb;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+  console.error('Supabase client failed to initialize', e);
+}
+
+async function getSupabaseSession() {
+  if (!sb) return null;
+  const { data } = await sb.auth.getSession();
+  return data.session;
+}
 
 async function efFetch(path, options = {}) {
   const session = await getSupabaseSession();
@@ -18,11 +36,6 @@ async function efFetch(path, options = {}) {
     throw new Error(err.error || `Request failed: ${res.status}`);
   }
   return res.json();
-}
-
-async function getSupabaseSession() {
-  // Placeholder — replace with: const { data } = await supabase.auth.getSession(); return data.session;
-  return window.__efSession || null;
 }
 
 const EF = {

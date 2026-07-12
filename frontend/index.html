@@ -72,6 +72,111 @@
   </main>
 </div>
 
+<!-- ==================== MODALS ==================== -->
+
+<!-- Auth Modal (Signup / Login) -->
+<div id="ef-auth-modal" class="ef-modal" style="display:none;">
+  <div class="ef-modal-content">
+    <span class="ef-close" id="btn-close-auth">&times;</span>
+    <h2 id="auth-title" style="font-family:var(--font-display);margin-bottom:24px;color:#fff;">Sign Up</h2>
+    <form id="auth-form">
+      <div class="ef-form-group">
+        <label for="auth-email">Email Address</label>
+        <input type="email" id="auth-email" required placeholder="you@example.com" />
+      </div>
+      <div class="ef-form-group">
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" required minlength="6" placeholder="••••••" />
+      </div>
+      <div class="ef-form-group" id="group-display-name">
+        <label for="auth-display-name">Display Name</label>
+        <input type="text" id="auth-display-name" placeholder="John Doe" />
+      </div>
+      <div class="ef-form-group" id="group-referral">
+        <label for="auth-referral">Referral Code (Optional)</label>
+        <input type="text" id="auth-referral" placeholder="e.g. abc123de" />
+      </div>
+      <button class="ef-btn ef-btn-primary" type="submit" id="btn-auth-submit" style="width:100%;margin-top:10px;">Create Account</button>
+    </form>
+    <p style="text-align:center;margin-top:20px;font-size:0.9rem;">
+      <a href="#" id="auth-toggle" style="color:var(--gold);text-decoration:none;">Already have an account? Log in</a>
+    </p>
+  </div>
+</div>
+
+<!-- Captcha Solve Modal -->
+<div id="ef-captcha-modal" class="ef-modal" style="display:none;">
+  <div class="ef-modal-content" style="max-width:380px;">
+    <span class="ef-close" id="btn-close-captcha">&times;</span>
+    <h2 style="font-family:var(--font-display);margin-bottom:12px;color:#fff;">Solve Captcha</h2>
+    <p style="font-size:0.85rem;opacity:0.8;margin-bottom:20px;">Type the characters exactly as shown to complete the task.</p>
+    <div class="ef-captcha-box" id="captcha-challenge-text">------</div>
+    <form id="captcha-form">
+      <div class="ef-form-group">
+        <input type="text" id="captcha-input" required autocomplete="off" placeholder="Enter solution" style="text-align:center;text-transform:uppercase;font-family:var(--font-mono);font-size:1.2rem;" />
+      </div>
+      <button class="ef-btn ef-btn-primary" type="submit" style="width:100%;">Verify & Submit</button>
+    </form>
+  </div>
+</div>
+
+<!-- Withdrawal Modal -->
+<div id="ef-withdrawal-modal" class="ef-modal" style="display:none;">
+  <div class="ef-modal-content">
+    <span class="ef-close" id="btn-close-withdrawal">&times;</span>
+    <h2 style="font-family:var(--font-display);margin-bottom:12px;color:#fff;">Request Withdrawal</h2>
+    <p style="font-size:0.85rem;opacity:0.8;margin-bottom:20px;">Withdraw minor earnings to your bank account via Paystack.</p>
+    
+    <div id="withdrawal-loading" style="display:none;text-align:center;padding:20px;">
+      <p style="opacity:0.75;">Resolving account details…</p>
+    </div>
+
+    <form id="withdrawal-form">
+      <div class="ef-form-group">
+        <label for="withdraw-bank">Select Bank</label>
+        <select id="withdraw-bank" required>
+          <option value="">Choose bank...</option>
+          <option value="044">Access Bank</option>
+          <option value="050">Ecobank</option>
+          <option value="070">Fidelity Bank</option>
+          <option value="011">First Bank</option>
+          <option value="058">GTBank</option>
+          <option value="030">Heritage Bank</option>
+          <option value="082">Keystone Bank</option>
+          <option value="101">Providus Bank</option>
+          <option value="221">Stanbic IBTC Bank</option>
+          <option value="068">Standard Chartered</option>
+          <option value="232">Sterling Bank</option>
+          <option value="032">Union Bank</option>
+          <option value="033">United Bank for Africa (UBA)</option>
+          <option value="215">Unity Bank</option>
+          <option value="035">Wema Bank</option>
+          <option value="057">Zenith Bank</option>
+        </select>
+      </div>
+      <div class="ef-form-group">
+        <label for="withdraw-account">Account Number</label>
+        <input type="text" id="withdraw-account" required maxlength="10" placeholder="10-digit Nuban" />
+      </div>
+      
+      <!-- Resolved account name shows up here -->
+      <div class="ef-form-group" id="group-resolved-name" style="display:none;">
+        <label>Account Name</label>
+        <div id="resolved-account-name" style="background:rgba(232,184,75,0.1);padding:12px;border-radius:8px;color:var(--gold);font-family:var(--font-mono);font-weight:600;">-</div>
+      </div>
+
+      <div class="ef-form-group">
+        <label for="withdraw-amount">Amount (NGN)</label>
+        <input type="number" id="withdraw-amount" required min="1000" placeholder="Min 1000 NGN" />
+      </div>
+      
+      <button class="ef-btn ef-btn-primary" type="button" id="btn-withdraw-verify" style="width:100%;margin-top:10px;">Verify Account</button>
+      <button class="ef-btn ef-btn-primary" type="submit" id="btn-withdraw-submit" style="width:100%;margin-top:10px;display:none;">Confirm Payout</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/assets/js/api.js"></script>
 <script src="/assets/js/animations.js"></script>
 <script src="/assets/js/app.js"></script>

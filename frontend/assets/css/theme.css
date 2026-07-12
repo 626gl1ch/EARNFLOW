@@ -228,3 +228,82 @@ body {
   .ef-sidebar { display: none; } /* Antigravity: replace with a mobile bottom-nav */
   .ef-main { padding: 20px; }
 }
+
+/* Modals & Forms */
+.ef-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(11, 43, 38, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.ef-modal-content {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: var(--shadow-lift);
+  position: relative;
+  animation: ef-fade-up 0.3s ease both;
+}
+.ef-close {
+  position: absolute;
+  top: 16px; right: 20px;
+  font-size: 1.8rem;
+  color: var(--mint);
+  cursor: pointer;
+  opacity: 0.7;
+}
+.ef-close:hover { opacity: 1; color: var(--gold); }
+
+.ef-form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ef-form-group label {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+.ef-form-group input, .ef-form-group select {
+  background: rgba(11, 43, 38, 0.4);
+  border: 1px solid var(--line);
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  width: 100%;
+  transition: border-color 0.15s ease;
+}
+.ef-form-group input:focus, .ef-form-group select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+.ef-form-group input::placeholder {
+  opacity: 0.4;
+}
+
+/* Captcha Challenge view */
+.ef-captcha-box {
+  background: #000;
+  border: 1px dashed var(--line);
+  padding: 14px;
+  border-radius: 8px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  letter-spacing: 0.4em;
+  color: var(--gold);
+  margin-bottom: 18px;
+  user-select: none;
+}
+

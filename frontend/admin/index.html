@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EarnFlow Admin Panel</title>
+<link rel="stylesheet" href="/assets/css/theme.css" />
+<style>
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+  }
+  .admin-tab-nav {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+  }
+  .admin-tab-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--mint);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .admin-tab-btn.active {
+    background: var(--gold);
+    color: var(--ink);
+    border-color: var(--gold);
+  }
+  .admin-card {
+    background: var(--ink-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.95rem;
+  }
+  .admin-table th, .admin-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .admin-table th {
+    font-family: var(--font-display);
+    color: var(--gold);
+  }
+  .btn-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 6px;
+  }
+  .btn-warn { background: var(--gold); color: var(--ink); }
+  .btn-suspend { background: var(--coral); color: #fff; }
+  .btn-ban { background: #000; color: var(--coral); border: 1px solid var(--coral); }
+</style>
+</head>
+<body>
+<div class="ef-container" style="padding-top: 40px; padding-bottom: 60px;">
+  
+  <!-- LOGGED OUT VIEW -->
+  <div id="admin-login-view" style="max-width: 400px; margin: 80px auto;">
+    <div class="ef-logo" style="text-align:center; font-size: 2rem;">Earn<span>Flow</span> Admin</div>
+    <div class="admin-card">
+      <h3 style="font-family: var(--font-display); color: #fff; margin-bottom: 20px;">Owner / Moderator Login</h3>
+      <form id="admin-login-form">
+        <div class="ef-form-group">
+          <label for="admin-email">Email</label>
+          <input type="email" id="admin-email" required placeholder="admin@earnflow.app" />
+        </div>
+        <div class="ef-form-group">
+          <label for="admin-password">Password</label>
+          <input type="password" id="admin-password" required placeholder="••••••" />
+        </div>
+        <button class="ef-btn ef-btn-primary" type="submit" style="width: 100%; margin-top: 10px;">Access Panel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOGGED IN VIEW -->
+  <div id="admin-dashboard-view" style="display: none;">
+    <div class="admin-header">
+      <div>
+        <div class="ef-logo" style="margin-bottom:4px;">Earn<span>Flow</span> Admin</div>
+        <div style="font-size: 0.85rem; opacity: 0.7;">System Overview & Operations</div>
+      </div>
+      <button class="ef-btn" id="btn-admin-logout" style="background:var(--coral);color:#fff;padding:8px 20px;font-size:0.85rem;">Logout</button>
+    </div>
+
+    <div class="admin-tab-nav">
+      <button class="admin-tab-btn active" data-tab="fraud">Fraud Queue</button>
+      <button class="admin-tab-btn" data-tab="withdrawals">Pending Withdrawals</button>
+      <button class="admin-tab-btn" data-tab="tasks">Task Manager</button>
+    </div>
+
+    <!-- FRAUD QUEUE VIEW -->
+    <div id="admin-tab-fraud" class="admin-tab-content">
+      <div class="admin-card">
+        <h3 style="font-family: var(--font-display); color: #fff;">Unresolved Risk Warnings</h3>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Flag Type</th>
+              <th>Severity</th>
+              <th>Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="fraud-queue-tbody">
+            <tr><td colspan="5" style="opacity:0.6;">Loading queue...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PENDING WITHDRAWALS VIEW -->
+    <div id="admin-tab-withdrawals" class="admin-tab-content" style="display: none;">
+      <div class="admin-card">
+        <h3 style="font-family: var(--font-display); color: #fff;">Pending Cashouts</h3>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Destination Details</th>
+              <th>Requested At</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawals-tbody">
+            <tr><td colspan="5" style="opacity:0.6;">Loading pending withdrawals...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TASK MANAGER VIEW -->
+    <div id="admin-tab-tasks" class="admin-tab-content" style="display: none;">
+      <div class="admin-card">
+        <h3 style="font-family: var(--font-display); color: #fff; margin-bottom: 20px;">Create New Task</h3>
+        <form id="create-task-form">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div class="ef-form-group">
+              <label for="task-title">Title</label>
+              <input type="text" id="task-title" required placeholder="Install and Open App" />
+            </div>
+            <div class="ef-form-group">
+              <label for="task-category">Category Slug</label>
+              <select id="task-category" required>
+                <option value="watch_ads">Watch & Earn</option>
+                <option value="captcha">Captcha Tasks</option>
+                <option value="ppc">Pay-Per-Call</option>
+                <option value="cpa">CPA Offers</option>
+                <option value="survey">Surveys</option>
+                <option value="testing">Software Testing</option>
+                <option value="download">Download & Earn</option>
+              </select>
+            </div>
+          </div>
+          <div class="ef-form-group">
+            <label for="task-description">Description</label>
+            <input type="text" id="task-description" required placeholder="Get paid for trying a new mobile app." />
+          </div>
+          <div class="ef-form-group">
+            <label for="task-instructions">Redirect / Action URL (Instructions)</label>
+            <input type="text" id="task-instructions" placeholder="https://offer.network/link" />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+            <div class="ef-form-group">
+              <label for="task-gross">Gross Payout (Minor Units, e.g. Kobo)</label>
+              <input type="number" id="task-gross" required placeholder="50000" />
+            </div>
+            <div class="ef-form-group">
+              <label for="task-payout">User Payout (Minor Units)</label>
+              <input type="number" id="task-payout" required placeholder="35000" />
+            </div>
+            <div class="ef-form-group">
+              <label for="task-provider">Provider Name</label>
+              <select id="task-provider" required>
+                <option value="inhouse">In-House</option>
+                <option value="cpalead">CPALead</option>
+                <option value="adgatemedia">AdGateMedia</option>
+                <option value="offertoro">OfferToro</option>
+                <option value="mylead">MyLead</option>
+              </select>
+            </div>
+          </div>
+          <button class="ef-btn ef-btn-primary" type="submit" style="margin-top: 15px;">Save Task</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8787'
+    : 'https://earnflow-api.daniellancce1.workers.dev';
+
+  const SUPABASE_URL = 'https://mdmpcxtjwnovbhidwwhj.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_6l7eSezczJta6rW2gomSqA_btj4X1h_';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function getHeaders() {
+    const { data } = await sb.auth.getSession();
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${data.session?.access_token || ''}`
+    };
+  }
+
+  // Auth check and state handling
+  sb.auth.onAuthStateChange(async (event, session) => {
+    const isLoggedIn = !!session;
+    document.getElementById('admin-login-view').style.display = isLoggedIn ? 'none' : 'block';
+    document.getElementById('admin-dashboard-view').style.display = isLoggedIn ? 'block' : 'none';
+
+    if (isLoggedIn) {
+      // Check if user is admin
+      const { data: admin } = await sb.from('admin_users').select('*').eq('id', session.user.id).single();
+      if (!admin) {
+        alert('Access denied: You are not authorized to view the admin panel.');
+        await sb.auth.signOut();
+        return;
+      }
+      loadFraudQueue();
+    }
+  });
+
+  // Login form handler
+  document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('admin-email').value;
+    const password = document.getElementById('admin-password').value;
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } catch (err) {
+      alert(err.message || 'Login failed');
+    }
+  });
+
+  // Logout handler
+  document.getElementById('btn-admin-logout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+  });
+
+  // Tab navigation
+  document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.admin-tab-content').forEach(c => c.style.display = 'none');
+
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('admin-tab-' + tab).style.display = 'block';
+
+      if (tab === 'fraud') loadFraudQueue();
+      if (tab === 'withdrawals') loadWithdrawals();
+    });
+  });
+
+  // Fraud queue loader
+  async function loadFraudQueue() {
+    const tbody = document.getElementById('fraud-queue-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.6;">Loading queue...</td></tr>';
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/fraud-queue`, { headers: await getHeaders() });
+      const data = await res.json();
+      
+      if (!data.items || !data.items.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.6;">No risk flags pending review.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.items.map(f => `
+        <tr>
+          <td><strong>${f.profiles?.display_name || 'User'}</strong><br/><small style="opacity:0.6;">${f.user_id}</small></td>
+          <td><span style="color:var(--gold);font-family:var(--font-mono);">${f.flag_type}</span></td>
+          <td><span style="text-transform:uppercase;font-weight:600;color:${f.severity === 'high' ? 'var(--coral)' : 'var(--gold)'};">${f.severity}</span></td>
+          <td><pre style="font-size:0.8rem;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;">${JSON.stringify(f.details)}</pre></td>
+          <td>
+            <button class="btn-action btn-warn" onclick="resolveFlag('${f.id}', 'warn')">Warn</button>
+            <button class="btn-action btn-suspend" onclick="resolveFlag('${f.id}', 'suspend')">Suspend</button>
+            <button class="btn-action btn-ban" onclick="resolveFlag('${f.id}', 'ban')">Ban</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--coral);">Failed to load fraud queue.</td></tr>';
+    }
+  }
+
+  async function resolveFlag(flagId, action) {
+    if (!confirm(`Are you sure you want to resolve this flag with action: ${action.toUpperCase()}?`)) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/fraud-queue/${flagId}/resolve`, {
+        method: 'POST',
+        headers: await getHeaders(),
+        body: JSON.stringify({ action })
+      });
+      if (res.ok) {
+        alert('Flag resolved successfully');
+        loadFraudQueue();
+      } else {
+        throw new Error('Failed to resolve flag');
+      }
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // Withdrawals loader
+  async function loadWithdrawals() {
+    const tbody = document.getElementById('withdrawals-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.6;">Loading withdrawals...</td></tr>';
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/withdrawals?status=requested`, { headers: await getHeaders() });
+      const data = await res.json();
+      
+      if (!data.items || !data.items.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.6;">No pending withdrawals.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = data.items.map(w => `
+        <tr>
+          <td><strong>${w.profiles?.display_name || 'User'}</strong><br/><small style="opacity:0.6;">${w.user_id}</small></td>
+          <td style="font-family:var(--font-mono);font-weight:600;color:var(--gold-soft);">${(w.amount_minor / 100).toFixed(2)} ${w.currency}</td>
+          <td>${w.method}</td>
+          <td><pre style="font-size:0.8rem;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;">${JSON.stringify(w.destination)}</pre></td>
+          <td style="font-size:0.85rem;opacity:0.85;">${new Date(w.requested_at).toLocaleString()}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:var(--coral);">Failed to load withdrawals.</td></tr>';
+    }
+  }
+
+  // Task creation handler
+  document.getElementById('create-task-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('task-title').value;
+    const categorySlug = document.getElementById('task-category').value;
+    const description = document.getElementById('task-description').value;
+    const instructions = document.getElementById('task-instructions').value;
+    const gross = parseInt(document.getElementById('task-gross').value);
+    const payout = parseInt(document.getElementById('task-payout').value);
+    const provider = document.getElementById('task-provider').value;
+
+    try {
+      // 1. Fetch category id
+      const { data: cat } = await sb.from('task_categories').select('id').eq('slug', categorySlug).single();
+      if (!cat) throw new Error('Category not found');
+
+      const payload = {
+        title,
+        category_id: cat.id,
+        description,
+        instructions: instructions || null,
+        gross_minor: gross,
+        payout_minor: payout,
+        provider,
+        country_scope: ['GLOBAL'],
+        requirements: {},
+        is_active: true
+      };
+
+      const res = await fetch(`${API_BASE}/api/admin/tasks`, {
+        method: 'POST',
+        headers: await getHeaders(),
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        alert('Task created successfully!');
+        document.getElementById('create-task-form').reset();
+      } else {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to create task');
+      }
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+</script>
+</body>
+</html>
