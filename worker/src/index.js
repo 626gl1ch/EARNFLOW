@@ -69,6 +69,7 @@ export default {
     const { runExpireTasks } = await import('./cron/expire-tasks.js');
     const { runPayoutBatch } = await import('./cron/payout-batch.js');
     const { runFraudSweep } = await import('./cron/fraud-sweep.js');
+    const { runOwnerPayout } = await import('./cron/owner-payout.js');
 
     switch (event.cron) {
       case '*/15 * * * *':
@@ -76,6 +77,7 @@ export default {
         break;
       case '0 2 * * *':
         ctx.waitUntil(runPayoutBatch(env));
+        ctx.waitUntil(runOwnerPayout(env));
         break;
       case '0 */6 * * *':
         ctx.waitUntil(runFraudSweep(env));

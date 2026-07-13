@@ -307,3 +307,144 @@ body {
   user-select: none;
 }
 
+/* -------------------- Marketing & Landing components -------------------- */
+.ef-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 24px 32px;
+  text-align: center;
+}
+.ef-stats-bar .stat-item .num {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+.ef-stats-bar .stat-item .lbl {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+  margin-top: 4px;
+}
+
+.ef-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.ef-card-step {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px;
+  position: relative;
+}
+.ef-card-step .step-num {
+  font-family: var(--font-mono);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--gold);
+  opacity: 0.35;
+  margin-bottom: 12px;
+}
+.ef-card-step h3 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: #fff;
+  margin: 0 0 10px;
+}
+.ef-card-step p {
+  font-size: 0.92rem;
+  opacity: 0.8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ef-faq-item {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 22px;
+  cursor: pointer;
+}
+.ef-faq-item summary {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: #fff;
+  outline: none;
+  font-weight: 600;
+}
+.ef-faq-item p {
+  margin-top: 12px;
+  font-size: 0.92rem;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+
+/* -------------------- Mobile Bottom Nav Bar -------------------- */
+.ef-mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--ink-2);
+  border-top: 1px solid var(--line);
+  z-index: 990;
+  padding: 8px 12px;
+  justify-content: space-around;
+}
+.ef-mobile-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--mint);
+  text-decoration: none;
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+.ef-mobile-nav a span {
+  font-size: 0.72rem;
+}
+.ef-mobile-nav a.active {
+  color: var(--gold);
+  opacity: 1;
+}
+
+@media (max-width: 860px) {
+  .ef-app { grid-template-columns: 1fr; padding-bottom: 70px; }
+  .ef-sidebar { display: none; }
+  .ef-mobile-nav { display: flex; }
+  .ef-main { padding: 18px; }
+}
+
+/* History Ledger Table */
+.ef-table-wrapper {
+  overflow-x: auto;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.ef-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.ef-table th, .ef-table td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.ef-table th {
+  font-family: var(--font-display);
+  color: var(--gold);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+

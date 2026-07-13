@@ -257,7 +257,76 @@ create table public.audit_log (
 );
 
 -- ============================================================================
--- 8. SECURITY-DEFINER MONEY FUNCTIONS (only path that may credit/debit)
+-- 8. OWNER REVENUE & PLATFORM COMMISSION (50% Split Automation)
+-- ============================================================================
+
+create table public.owner_wallets (
+  id int primary key default 1 check (id = 1),   -- Singleton row for platform owner
+  balance_minor bigint not null default 0 check (balance_minor >= 0),
+  lifetime_commission_minor bigint not null default 0,
+  currency char(3) not null default 'NGN',
+  updated_at timestamptz not null default now()
+);
+
+create table public.owner_ledger_entries (
+  id uuid primary key default uuid_generate_v4(),
+  entry_type text not null check (entry_type in ('commission_credit', 'owner_withdrawal_debit', 'owner_withdrawal_reversal')),
+  amount_minor bigint not null,                  -- positive = revenue credited, negative = payout to owner
+  currency char(3) not null default 'NGN',
+  related_task_completion_id uuid,
+  related_withdrawal_id uuid,
+  memo text,
+  created_at timestamptz not null default now()
+);
+
+create table public.owner_payout_config (
+  id int primary key default 1 check (id = 1),   -- Singleton row for owner payment account
+  bank_code text not null,
+  account_number text not null,
+  account_name text not null,
+  recipient_code text,                           -- Paystack recipient code
+  currency char(3) not null default 'NGN',
+  auto_payout_enabled boolean not null default true,
+  min_payout_minor bigint not null default 500000, -- 5,000 NGN min threshold for owner auto-payout
+  updated_at timestamptz not null default now()
+);
+
+create table public.owner_withdrawals (
+  id uuid primary key default uuid_generate_v4(),
+  amount_minor bigint not null check (amount_minor > 0),
+  currency char(3) not null default 'NGN',
+  destination jsonb not null,
+  status text not null default 'requested' check (status in ('requested','processing','paid','failed','reversed')),
+  paystack_transfer_ref text,
+  failure_reason text,
+  requested_at timestamptz not null default now(),
+  processed_at timestamptz
+);
+
+-- Trigger to sync owner_wallets balance with owner_ledger_entries
+create or replace function public.fn_apply_owner_ledger_entry() returns trigger as $$
+begin
+  insert into public.owner_wallets (id, balance_minor, lifetime_commission_minor)
+  values (1, new.amount_minor, greatest(new.amount_minor, 0))
+  on conflict (id) do update
+    set balance_minor = public.owner_wallets.balance_minor + new.amount_minor,
+        lifetime_commission_minor = public.owner_wallets.lifetime_commission_minor + greatest(new.amount_minor, 0),
+        updated_at = now();
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger trg_owner_ledger_apply
+  after insert on public.owner_ledger_entries
+  for each row execute function public.fn_apply_owner_ledger_entry();
+
+-- Initialize singleton owner wallet row
+insert into public.owner_wallets (id, balance_minor, lifetime_commission_minor)
+values (1, 0, 0)
+on conflict (id) do nothing;
+
+-- ============================================================================
+-- 9. SECURITY-DEFINER MONEY FUNCTIONS (only path that may credit/debit)
 -- ============================================================================
 
 create or replace function public.complete_task(
@@ -266,6 +335,8 @@ create or replace function public.complete_task(
 declare
   v_completion public.task_completions%rowtype;
   v_task public.tasks%rowtype;
+  v_user_payout bigint;
+  v_owner_commission bigint;
 begin
   select * into v_completion from public.task_completions where id = p_task_completion_id for update;
   if v_completion.status <> 'verified' then
@@ -274,10 +345,29 @@ begin
 
   select * into v_task from public.tasks where id = v_completion.task_id;
 
-  insert into public.ledger_entries (user_id, entry_type, amount_minor, currency, related_task_completion_id, memo)
-  values (v_completion.user_id, 'task_credit', v_task.payout_minor, v_task.currency, v_completion.id,
-          'Payout for task ' || v_task.title);
+  -- 50/50 REVENUE SPLIT AUTOMATION:
+  -- User gets 50% of task gross_minor, Platform Owner gets remaining 50%
+  if v_task.gross_minor > 0 then
+    v_user_payout := floor(v_task.gross_minor * 0.50);
+    v_owner_commission := v_task.gross_minor - v_user_payout;
+  else
+    v_user_payout := v_task.payout_minor;
+    v_owner_commission := 0;
+  end if;
 
+  -- 1. Credit 50% payout to user ledger
+  insert into public.ledger_entries (user_id, entry_type, amount_minor, currency, related_task_completion_id, memo)
+  values (v_completion.user_id, 'task_credit', v_user_payout, v_task.currency, v_completion.id,
+          'Payout for task: ' || v_task.title);
+
+  -- 2. Credit 50% platform commission to owner ledger
+  if v_owner_commission > 0 then
+    insert into public.owner_ledger_entries (entry_type, amount_minor, currency, related_task_completion_id, memo)
+    values ('commission_credit', v_owner_commission, v_task.currency, v_completion.id,
+            'Platform 50% commission for task: ' || v_task.title);
+  end if;
+
+  -- 3. Mark completion paid and bump counters
   update public.task_completions
     set status = 'paid', paid_at = now()
     where id = p_task_completion_id;
@@ -308,4 +398,28 @@ begin
   return v_withdrawal_id;
 end;
 $$ language plpgsql security definer;
+
+create or replace function public.request_owner_withdrawal(
+  p_amount_minor bigint, p_currency char(3), p_destination jsonb
+) returns uuid as $$
+declare
+  v_withdrawal_id uuid;
+  v_balance bigint;
+begin
+  select balance_minor into v_balance from public.owner_wallets where id = 1 for update;
+  if v_balance is null or v_balance < p_amount_minor then
+    raise exception 'insufficient owner wallet balance';
+  end if;
+
+  insert into public.owner_withdrawals (amount_minor, currency, destination)
+  values (p_amount_minor, p_currency, p_destination)
+  returning id into v_withdrawal_id;
+
+  insert into public.owner_ledger_entries (entry_type, amount_minor, currency, related_withdrawal_id, memo)
+  values ('owner_withdrawal_debit', -p_amount_minor, p_currency, v_withdrawal_id, 'Owner revenue withdrawal to bank');
+
+  return v_withdrawal_id;
+end;
+$$ language plpgsql security definer;
+
 

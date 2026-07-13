@@ -73,5 +73,49 @@ export async function handleAdmin(request, env, ctx, json, subpath) {
     return json({ items: data || [] });
   }
 
+  // GET /api/admin/owner-revenue — get platform profit stats and owner config
+  if (subpath === '/owner-revenue' && request.method === 'GET') {
+    const { data: wallet } = await supabase.from('owner_wallets').select('*').eq('id', 1).single();
+    const { data: config } = await supabase.from('owner_payout_config').select('*').eq('id', 1).single();
+    const { data: withdrawals } = await supabase.from('owner_withdrawals').select('*').order('requested_at', { ascending: false }).limit(20);
+    const { data: recentCommission } = await supabase.from('owner_ledger_entries').select('*').order('created_at', { ascending: false }).limit(20);
+
+    return json({
+      wallet: wallet || { balance_minor: 0, lifetime_commission_minor: 0, currency: 'NGN' },
+      config: config || null,
+      withdrawals: withdrawals || [],
+      recent_commission: recentCommission || [],
+    });
+  }
+
+  // POST /api/admin/owner-bank — update owner payout bank details
+  if (subpath === '/owner-bank' && request.method === 'POST') {
+    const body = await request.json();
+    const { bank_code, account_number, account_name, auto_payout_enabled, min_payout_minor } = body;
+
+    const payload = {
+      id: 1,
+      bank_code,
+      account_number,
+      account_name,
+      auto_payout_enabled: auto_payout_enabled ?? true,
+      min_payout_minor: min_payout_minor || 500000,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase.from('owner_payout_config').upsert(payload).select().single();
+    if (error) return json({ error: error.message }, 400);
+
+    return json({ ok: true, config: data });
+  }
+
+  // POST /api/admin/owner-payout — trigger immediate manual payout to owner bank
+  if (subpath === '/owner-payout' && request.method === 'POST') {
+    const { runOwnerPayout } = await import('../cron/owner-payout.js');
+    await runOwnerPayout(env);
+    return json({ ok: true, message: 'Owner payout batch execution triggered.' });
+  }
+
   return null;
 }
+

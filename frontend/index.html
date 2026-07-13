@@ -18,9 +18,10 @@
     </nav>
   </header>
 
+  <!-- Hero Section -->
   <section class="ef-hero ef-container">
     <h1>Every task you finish<br>writes a new line.</h1>
-    <p class="tagline">Surveys, offers, ads, and more — completed tasks turn into real money you can withdraw to your bank in Nigeria or worldwide.</p>
+    <p class="tagline">Surveys, offers, captchas, and micro-gigs — completed tasks turn into real cash automatically routed to your bank account.</p>
 
     <div class="ef-passbook" id="ef-live-ledger">
       <!-- populated by animations.js: rolling sample of recent completions -->
@@ -32,11 +33,90 @@
     </div>
   </section>
 
-  <section class="ef-container ef-reveal" style="padding:48px 0;">
-    <div class="ef-grid" id="ef-category-preview">
-      <!-- populated by app.js from /api tasks/categories, static fallback below -->
+  <!-- Platform Stats Bar -->
+  <section class="ef-container ef-reveal" style="margin: 40px auto;">
+    <div class="ef-stats-bar">
+      <div class="stat-item">
+        <div class="num">₦14,850,000+</div>
+        <div class="lbl">Total Cash Paid Out</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">48,200+</div>
+        <div class="lbl">Active Global Earners</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">1,250+</div>
+        <div class="lbl">Daily Tasks Available</div>
+      </div>
+      <div class="stat-item">
+        <div class="num">Direct Bank</div>
+        <div class="lbl">Instant Payouts</div>
+      </div>
     </div>
   </section>
+
+  <!-- How It Works Section -->
+  <section class="ef-container ef-reveal" style="padding:60px 0;">
+    <h2 style="font-family:var(--font-display);text-align:center;font-size:2.4rem;color:#fff;margin-bottom:12px;">3 Simple Steps to Start Flowing</h2>
+    <p style="text-align:center;opacity:0.8;max-width:600px;margin:0 auto 40px;">No complicated setups. No hidden fees. Just complete tasks and get paid directly to your local bank account.</p>
+
+    <div class="ef-grid-3">
+      <div class="ef-card-step">
+        <div class="step-num">01</div>
+        <h3>Choose Your Gigs</h3>
+        <p>Select from daily captchas, app installs, quick surveys, daily check-ins, or software testing jobs matched to your region.</p>
+      </div>
+      <div class="ef-card-step">
+        <div class="step-num">02</div>
+        <h3>Instant Verification</h3>
+        <p>Submit your task solutions. Our automated verification engine validates your submission and instantly credits your wallet ledger.</p>
+      </div>
+      <div class="ef-card-step">
+        <div class="step-num">03</div>
+        <h3>Automated Withdrawal</h3>
+        <p>Request cash out to your local bank. Paystack automatically processes your transfer directly to your bank account.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Task Categories Showcase -->
+  <section class="ef-container ef-reveal" style="padding:40px 0 60px;">
+    <h2 style="font-family:var(--font-display);text-align:center;font-size:2rem;color:#fff;margin-bottom:30px;">Popular Earning Categories</h2>
+    <div class="ef-grid" id="ef-category-preview">
+      <!-- populated by app.js from /api/tasks/categories -->
+    </div>
+  </section>
+
+  <!-- FAQ Section -->
+  <section class="ef-container ef-reveal" style="padding:40px 0 80px;">
+    <h2 style="font-family:var(--font-display);text-align:center;font-size:2rem;color:#fff;margin-bottom:30px;">Frequently Asked Questions</h2>
+    <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px;">
+      <details class="ef-faq-item">
+        <summary>How do I get paid?</summary>
+        <p>Withdrawals are processed automatically via Paystack directly to your Nigerian bank account or mobile money account. Minimum withdrawal is 1,000 NGN.</p>
+      </details>
+      <details class="ef-faq-item">
+        <summary>Are there any hidden joining fees?</summary>
+        <p>No! EarnFlow is 100% free forever. We pay you for completing offers, surveys, and tasks sponsored by advertisers.</p>
+      </details>
+      <details class="ef-faq-item">
+        <summary>How much can I earn per day?</summary>
+        <p>Your earnings depend on the time you dedicate and the tasks available in your country. Regular users earn anywhere from ₦2,000 to ₦15,000 daily plus referral commissions.</p>
+      </details>
+      <details class="ef-faq-item">
+        <summary>How does the 10% Referral Bonus work?</summary>
+        <p>Share your referral link with friends. Whenever your referred friend completes a task during their first 30 days, you automatically earn 10% of their earnings!</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="border-top:1px solid var(--line);padding:40px 0;background:var(--ink-2);">
+    <div class="ef-container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;">
+      <div class="ef-logo">Earn<span>Flow</span></div>
+      <div style="font-size:0.85rem;opacity:0.7;">&copy; 2026 EarnFlow Platform. Secured by Paystack & Cloudflare. All rights reserved.</div>
+    </div>
+  </footer>
 </div>
 
 <!-- ==================== DASHBOARD (shown when logged in) ==================== -->
@@ -48,11 +128,21 @@
       <a href="#/tasks">🧩 Tasks</a>
       <a href="#/offers">🎯 Offers</a>
       <a href="#/surveys">📋 Surveys</a>
+      <a href="#/history">📜 History Log</a>
       <a href="#/withdraw">💸 Withdraw</a>
       <a href="#/referrals">🔗 Referrals</a>
       <a href="#/profile">👤 Profile</a>
     </nav>
   </aside>
+
+  <!-- Responsive Mobile Bottom Navigation -->
+  <nav class="ef-mobile-nav">
+    <a href="#/dashboard" class="active">🏠<span>Home</span></a>
+    <a href="#/tasks">🧩<span>Tasks</span></a>
+    <a href="#/surveys">📋<span>Surveys</span></a>
+    <a href="#/history">📜<span>History</span></a>
+    <a href="#/withdraw">💸<span>Payout</span></a>
+  </nav>
 
   <main class="ef-main">
     <div class="ef-balance-header ef-reveal">
@@ -65,7 +155,6 @@
       <button class="ef-btn ef-btn-primary" id="btn-withdraw">Withdraw</button>
     </div>
 
-    <h3 style="font-family:var(--font-display);color:#fff;">Recommended for you</h3>
     <div class="ef-grid" id="ef-task-feed">
       <!-- populated by dashboard.js via GET /api/tasks/feed -->
     </div>

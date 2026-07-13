@@ -27,6 +27,28 @@ create policy "own withdrawals insert" on public.withdrawals for insert with che
 create policy "public read active tasks" on public.tasks for select using (is_active = true);
 create policy "public read categories" on public.task_categories for select using (is_active = true);
 
--- No client-side write policies exist for wallets, ledger_entries, or task_completions.status transitions
--- to 'verified'/'paid' — those only ever happen via the security-definer functions above, called by
--- the Worker using the service role key.
+-- Owner revenue tables RLS policies (accessible by service role / admin users only)
+alter table public.owner_wallets enable row level security;
+alter table public.owner_ledger_entries enable row level security;
+alter table public.owner_payout_config enable row level security;
+alter table public.owner_withdrawals enable row level security;
+
+create policy "admin read owner_wallets" on public.owner_wallets for select using (
+  exists (select 1 from public.admin_users where id = auth.uid() and role = 'owner')
+);
+
+create policy "admin read owner_ledger_entries" on public.owner_ledger_entries for select using (
+  exists (select 1 from public.admin_users where id = auth.uid() and role = 'owner')
+);
+
+create policy "admin read owner_payout_config" on public.owner_payout_config for select using (
+  exists (select 1 from public.admin_users where id = auth.uid() and role = 'owner')
+);
+
+create policy "admin read owner_withdrawals" on public.owner_withdrawals for select using (
+  exists (select 1 from public.admin_users where id = auth.uid() and role = 'owner')
+);
+
+-- No client-side write policies exist for wallets, ledger_entries, owner_wallets, or task_completions.status transitions
+-- to 'verified'/'paid' — those only ever happen via security-definer functions called by the Worker using service role key.
+

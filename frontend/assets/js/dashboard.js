@@ -29,20 +29,25 @@ const EFDashboard = {
   },
 
   setupTabNavigation() {
-    const navLinks = document.querySelectorAll('.ef-nav a');
-    navLinks.forEach(link => {
-      // Clean up previous event listeners to avoid duplicates
+    const allNavLinks = document.querySelectorAll('.ef-nav a, .ef-mobile-nav a');
+    allNavLinks.forEach(link => {
       const newLink = link.cloneNode(true);
       link.parentNode.replaceChild(newLink, link);
 
       newLink.addEventListener('click', (e) => {
         e.preventDefault();
-        navLinks.forEach(l => l.classList.remove('active'));
-        newLink.classList.add('active');
-
         const href = newLink.getAttribute('href');
         const tab = href.replace('#/', '');
         this.activeTab = tab;
+
+        document.querySelectorAll('.ef-nav a, .ef-mobile-nav a').forEach(l => {
+          if (l.getAttribute('href') === href) {
+            l.classList.add('active');
+          } else {
+            l.classList.remove('active');
+          }
+        });
+
         this.loadActiveTabContent();
       });
     });
@@ -140,6 +145,16 @@ const EFDashboard = {
       `;
       mainCol.appendChild(viewContent);
       await this.loadSurveys();
+    } else if (this.activeTab === 'history') {
+      viewContent.innerHTML = `
+        <h3 style="font-family:var(--font-display);color:#fff;margin-top:20px;">Earnings & Transaction History</h3>
+        <p style="opacity:0.7;font-size:0.9rem;margin-bottom:20px;">Complete immutable ledger of your task payouts, referral bonuses, and bank withdrawals.</p>
+        <div class="ef-table-wrapper" id="ef-history-container">
+          <p style="padding:20px;opacity:0.7;">Loading history log...</p>
+        </div>
+      `;
+      mainCol.appendChild(viewContent);
+      await this.loadHistoryLog();
     } else if (this.activeTab === 'withdraw') {
       viewContent.innerHTML = `
         <h3 style="font-family:var(--font-display);color:#fff;margin-top:20px;">Withdraw Funds</h3>
@@ -417,6 +432,64 @@ const EFDashboard = {
         submitBtn.innerText = 'Confirm Payout';
       }
     });
+  },
+
+  async loadHistoryLog() {
+    const container = document.getElementById('ef-history-container');
+    if (!container) return;
+
+    try {
+      const res = await EF.getLedger(50);
+      const items = res.items || [];
+
+      if (!items.length) {
+        container.innerHTML = '<p style="padding:20px;opacity:0.6;">No activity logged yet. Complete tasks to see your ledger flow!</p>';
+        return;
+      }
+
+      const rows = items.map(item => {
+        const isCredit = item.amount_minor > 0;
+        const formattedAmount = (Math.abs(item.amount_minor) / 100).toFixed(2);
+        const color = isCredit ? 'var(--gold-soft)' : 'var(--coral)';
+        const sign = isCredit ? '+' : '-';
+        const date = new Date(item.created_at).toLocaleString();
+
+        let typeBadge = item.entry_type;
+        if (item.entry_type === 'task_credit') typeBadge = '💰 Task Credit';
+        else if (item.entry_type === 'withdrawal_debit') typeBadge = '💸 Cashout Request';
+        else if (item.entry_type === 'referral_bonus') typeBadge = '🔗 Referral Commission';
+        else if (item.entry_type === 'streak_bonus') typeBadge = '🔥 Daily Streak';
+        else if (item.entry_type === 'withdrawal_reversal') typeBadge = '🔄 Transfer Reversal';
+
+        return `
+          <tr>
+            <td><strong style="color:var(--mint);">${typeBadge}</strong></td>
+            <td style="opacity:0.85;">${item.memo || '-'}</td>
+            <td style="font-family:var(--font-mono);font-weight:600;color:${color}">${sign}${item.currency} ${formattedAmount}</td>
+            <td style="font-size:0.82rem;opacity:0.75;">${date}</td>
+          </tr>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <table class="ef-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      `;
+    } catch (e) {
+      container.innerHTML = '<p style="padding:20px;color:var(--coral);">Failed to load history log.</p>';
+      console.error(e);
+    }
   }
 };
 
