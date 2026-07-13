@@ -5,6 +5,8 @@ Antigravity: append an entry every time you push.
 
 ## [Unreleased]
 ### Added
+- Created `database/migrate.js` automated migration runner to apply `schema.sql`, `functions.sql`, `policies.sql`, and `seed.sql` with a single command once credentials are configured.
+- Configured local development fallback bindings in `worker/wrangler.toml` for seamless local testing via `wrangler dev`.
 - Separated RLS policies into database/policies.sql for clean database folder structure.
 - Implemented robust token bucket rate limiting on auth and task endpoints in Cloudflare Worker using KV.
 - Added support for in-house Captcha verification (auto-generating challenge on task start, validating solution on task submit, caching in KV).
