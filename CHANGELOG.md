@@ -5,9 +5,15 @@ Antigravity: append an entry every time you push.
 
 ## [Unreleased]
 ### Added
+- Implemented **50/50 Revenue Split Automation** in Postgres function `complete_task`: whenever any user completes a task, the platform automatically allocates 50% to the user and 50% net commission to the platform owner.
+- Created `owner_wallets`, `owner_ledger_entries`, `owner_payout_config`, and `owner_withdrawals` database tables with row-level security.
+- Added `worker/src/cron/owner-payout.js` daily cron job to automatically transfer accumulated 50% platform profits to the owner's personal bank account via Paystack.
+- Added `/api/admin/owner-revenue`, `/api/admin/owner-bank`, and `/api/admin/owner-payout` API endpoints.
+- Upgraded Admin Panel (`frontend/admin/index.html`) with a dedicated **Platform Profit & Owner Payouts** tab to track revenue and configure the owner bank account.
+- Expanded landing page (`frontend/index.html`) with live global stats, 3-step illustrated workflow cards, FAQ accordions, and footer.
+- Built responsive **Mobile Bottom Navigation Bar** (`.ef-mobile-nav`) for mobile and tablet devices.
+- Added **Earnings History Log** tab (`#/history`) to user dashboard to view all past credits and withdrawals.
 - Created `database/migrate.js` automated migration runner to apply `schema.sql`, `functions.sql`, `policies.sql`, and `seed.sql` with a single command once credentials are configured.
-- Configured local development fallback bindings in `worker/wrangler.toml` for seamless local testing via `wrangler dev`.
-- Separated RLS policies into database/policies.sql for clean database folder structure.
 - Implemented robust token bucket rate limiting on auth and task endpoints in Cloudflare Worker using KV.
 - Added support for in-house Captcha verification (auto-generating challenge on task start, validating solution on task submit, caching in KV).
 - Added Streak check-in task validation (limiting check-ins to once per user per calendar day).
