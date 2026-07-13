@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 account_id = "" # daniellancce1 account id — fill in
 
 kv_namespaces = [
-  { binding = "FRAUD_KV", id = "" } # create via `wrangler kv:namespace create FRAUD_KV`
+  { binding = "FRAUD_KV", id = "dev_fraud_kv_id" } # create via `wrangler kv:namespace create FRAUD_KV` in prod
 ]
 
 [triggers]
