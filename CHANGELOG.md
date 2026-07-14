@@ -5,6 +5,9 @@ Antigravity: append an entry every time you push.
 
 ## [Unreleased]
 ### Added
+- Implemented **Dual Payout System (Crypto USDT & Paystack Bank)** across user dashboard and platform owner revenue system:
+  - Users can now select between **Paystack Local Bank Transfer** or **Crypto (USDT TRC20, BEP20, ERC20, Polygon)** when requesting cashouts.
+  - Platform Owner can select between receiving accumulated 50% profits via **Paystack Local Bank** or **Crypto USDT Wallet**.
 - Implemented **50/50 Revenue Split Automation** in Postgres function `complete_task`: whenever any user completes a task, the platform automatically allocates 50% to the user and 50% net commission to the platform owner.
 - Created `owner_wallets`, `owner_ledger_entries`, `owner_payout_config`, and `owner_withdrawals` database tables with row-level security.
 - Added `worker/src/cron/owner-payout.js` daily cron job to automatically transfer accumulated 50% platform profits to the owner's personal bank account via Paystack.
