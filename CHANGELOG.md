@@ -5,6 +5,10 @@ Antigravity: append an entry every time you push.
 
 ## [Unreleased]
 ### Added
+- **Full-Stack Deep Audit & Hardening**:
+  - Fixed Paystack webhook postback reference parser in `worker/src/routes/postbacks.js` to distinguish between `earnflow_owner_${id}` (owner profit transfers) and `earnflow_${id}` (user cashout transfers).
+  - Enhanced post-signup handler in `worker/src/routes/auth.js` to process referral codes, resolve referrer IDs, and create initial `referrals` tracking records automatically.
+  - Added RLS policy for `referrals` table in `database/policies.sql` allowing users to securely track their own referred network.
 - Implemented **Dual Payout System (Crypto USDT & Paystack Bank)** across user dashboard and platform owner revenue system:
   - Users can now select between **Paystack Local Bank Transfer** or **Crypto (USDT TRC20, BEP20, ERC20, Polygon)** when requesting cashouts.
   - Platform Owner can select between receiving accumulated 50% profits via **Paystack Local Bank** or **Crypto USDT Wallet**.
