@@ -18,6 +18,7 @@ export async function handleAuth(request, env, ctx, json, subpath) {
     const { user } = await getUserFromRequest(request, env);
     if (!user) return json({ error: 'unauthorized' }, 401);
 
+    const body = await request.json().catch(() => ({}));
     const risk = await checkIpRisk(ip, env);
     await recordIpRiskCheck(supabase, user.id, risk);
 
@@ -35,11 +36,36 @@ export async function handleAuth(request, env, ctx, json, subpath) {
       });
     }
 
+    // Resolve referred_by if referral_code passed
+    let referrerId = null;
+    if (body.referral_code) {
+      const { data: referrer } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('referral_code', String(body.referral_code).trim())
+        .single();
+      if (referrer) {
+        referrerId = referrer.id;
+      }
+    }
+
+    const displayName = user.user_metadata?.display_name || body.display_name || user.email?.split('@')[0] || 'User';
+
     await supabase.from('profiles').upsert({
       id: user.id,
+      display_name: displayName,
       country_code: risk.country_code,
       country_status,
+      ...(referrerId ? { referred_by: referrerId } : {}),
     });
+
+    if (referrerId) {
+      await supabase.from('referrals').insert({
+        referrer_id: referrerId,
+        referee_id: user.id,
+      }).catch(() => {}); // ignore duplicate if re-running
+    }
+
     await supabase.from('wallets').upsert({ user_id: user.id, currency: 'NGN' }, { onConflict: 'user_id' });
 
     return json({ country_status, country_code: risk.country_code });

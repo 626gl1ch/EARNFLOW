@@ -155,8 +155,53 @@ async function handlePaystackPostback(request, env, supabase, json) {
     return json({ ok: true, message: 'ignored_reference' });
   }
 
-  const withdrawalId = reference.replace('earnflow_', '');
+  // Handle OWNER revenue transfer postbacks
+  if (reference.startsWith('earnflow_owner_')) {
+    const withdrawalId = reference.replace('earnflow_owner_', '');
+    const { data: ow, error: owErr } = await supabase
+      .from('owner_withdrawals')
+      .select('*')
+      .eq('id', withdrawalId)
+      .single();
 
+    if (owErr || !ow) {
+      return json({ error: 'owner_withdrawal_not_found' }, 404);
+    }
+
+    if (['paid', 'failed', 'reversed'].includes(ow.status)) {
+      return json({ ok: true, message: 'already_processed' });
+    }
+
+    if (event === 'transfer.success') {
+      await supabase
+        .from('owner_withdrawals')
+        .update({ status: 'paid', processed_at: new Date().toISOString() })
+        .eq('id', ow.id);
+      return json({ ok: true, action: 'owner_marked_paid' });
+    }
+
+    if (event === 'transfer.failed' || event === 'transfer.reversed') {
+      const failureReason = data.gateway_response || 'Paystack owner transfer failed';
+      await supabase.from('owner_ledger_entries').insert({
+        entry_type: 'owner_withdrawal_reversal',
+        amount_minor: ow.amount_minor,
+        currency: ow.currency,
+        related_withdrawal_id: ow.id,
+        memo: `Failed owner transfer: ${failureReason}`,
+      });
+
+      await supabase
+        .from('owner_withdrawals')
+        .update({ status: 'failed', failure_reason: failureReason, processed_at: new Date().toISOString() })
+        .eq('id', ow.id);
+
+      return json({ ok: true, action: 'owner_marked_failed' });
+    }
+    return json({ ok: true, message: 'event_ignored' });
+  }
+
+  // Handle USER transfer postbacks
+  const withdrawalId = reference.replace('earnflow_', '');
   const { data: w, error: wErr } = await supabase
     .from('withdrawals')
     .select('*')
@@ -198,8 +243,8 @@ async function handlePaystackPostback(request, env, supabase, json) {
       .update({ status: 'failed', failure_reason: failureReason, processed_at: new Date().toISOString() })
       .eq('id', w.id);
 
-    return json({ ok: true, action: 'reversed' });
+    return json({ ok: true, action: 'marked_failed' });
   }
 
-  return json({ ok: true, message: 'unhandled_event' });
+  return json({ ok: true, message: 'event_ignored' });
 }

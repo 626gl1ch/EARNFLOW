@@ -22,6 +22,8 @@ create policy "own completions" on public.task_completions for select using (aut
 create policy "own completions insert" on public.task_completions for insert with check (auth.uid() = user_id);
 create policy "own withdrawals" on public.withdrawals for select using (auth.uid() = user_id);
 create policy "own withdrawals insert" on public.withdrawals for insert with check (auth.uid() = user_id);
+alter table public.referrals enable row level security;
+create policy "own referrals" on public.referrals for select using (auth.uid() = referrer_id);
 
 -- tasks & task_categories are public-readable (filtering by country happens in application logic / a view)
 create policy "public read active tasks" on public.tasks for select using (is_active = true);
