@@ -34,6 +34,42 @@ export async function runOwnerPayout(env) {
 
   const payoutAmount = wallet.balance_minor;
 
+  if (config.payout_method === 'crypto_usdt') {
+    if (!config.crypto_address) {
+      console.error('Owner crypto payout destination unconfigured.');
+      return;
+    }
+
+    const { data: withdrawalId, error: wErr } = await supabase.rpc('request_owner_withdrawal', {
+      p_amount_minor: payoutAmount,
+      p_currency: config.currency,
+      p_destination: {
+        method: 'crypto_usdt',
+        network: config.crypto_network || 'TRC20',
+        wallet_address: config.crypto_address,
+      },
+    });
+
+    if (wErr || !withdrawalId) {
+      console.error('Owner crypto withdrawal request error:', wErr?.message);
+      return;
+    }
+
+    await supabase
+      .from('owner_withdrawals')
+      .update({ status: 'processing' })
+      .eq('id', withdrawalId);
+
+    console.log(`Successfully queued owner Crypto USDT payout of ${(payoutAmount / 100).toFixed(2)} ${config.currency} to ${config.crypto_address}`);
+    return;
+  }
+
+  // Paystack Payout
+  if (!config.bank_code || !config.account_number) {
+    console.error('Owner Paystack bank details unconfigured.');
+    return;
+  }
+
   // 3. Ensure Paystack recipient code exists
   let recipientCode = config.recipient_code;
   if (!recipientCode) {
@@ -61,6 +97,7 @@ export async function runOwnerPayout(env) {
     p_amount_minor: payoutAmount,
     p_currency: config.currency,
     p_destination: {
+      method: 'paystack_bank',
       bank_code: config.bank_code,
       account_number: config.account_number,
       account_name: config.account_name,

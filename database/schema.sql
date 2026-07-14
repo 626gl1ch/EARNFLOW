@@ -204,7 +204,7 @@ create table public.payout_config (
   country_code char(2) primary key,
   min_withdrawal_minor bigint not null,
   currency char(3) not null,
-  supported_methods text[] not null default array['paystack_bank']
+  supported_methods text[] not null default array['paystack_bank','paystack_mobile_money','crypto_usdt']
 );
 
 create table public.withdrawals (
@@ -212,8 +212,8 @@ create table public.withdrawals (
   user_id uuid not null references public.profiles(id) on delete cascade,
   amount_minor bigint not null check (amount_minor > 0),
   currency char(3) not null,
-  method text not null,                  -- 'paystack_bank','paystack_mobile_money'
-  destination jsonb not null,            -- account number/bank code, tokenized where possible
+  method text not null,                  -- 'paystack_bank','paystack_mobile_money','crypto_usdt'
+  destination jsonb not null,            -- bank details OR { network, wallet_address }
   status text not null default 'requested'
     check (status in ('requested','processing','paid','failed','reversed')),
   paystack_transfer_ref text,
@@ -281,10 +281,13 @@ create table public.owner_ledger_entries (
 
 create table public.owner_payout_config (
   id int primary key default 1 check (id = 1),   -- Singleton row for owner payment account
-  bank_code text not null,
-  account_number text not null,
-  account_name text not null,
+  payout_method text not null default 'paystack' check (payout_method in ('paystack', 'crypto_usdt')),
+  bank_code text,
+  account_number text,
+  account_name text,
   recipient_code text,                           -- Paystack recipient code
+  crypto_network text,                           -- 'TRC20', 'BEP20', 'ERC20', 'Polygon'
+  crypto_address text,                           -- Owner USDT Wallet Address
   currency char(3) not null default 'NGN',
   auto_payout_enabled boolean not null default true,
   min_payout_minor bigint not null default 500000, -- 5,000 NGN min threshold for owner auto-payout

@@ -347,10 +347,33 @@ const EFDashboard = {
   setupWithdrawalFlow() {
     let resolvedRecipient = null;
 
+    const methodSelect = document.getElementById('withdraw-method-select');
+    const paystackFields = document.getElementById('withdraw-paystack-fields');
+    const cryptoFields = document.getElementById('withdraw-crypto-fields');
     const verifyBtn = document.getElementById('btn-withdraw-verify');
     const submitBtn = document.getElementById('btn-withdraw-submit');
     const groupName = document.getElementById('group-resolved-name');
     const nameBox = document.getElementById('resolved-account-name');
+
+    methodSelect?.addEventListener('change', () => {
+      const isCrypto = methodSelect.value === 'crypto_usdt';
+      if (isCrypto) {
+        paystackFields.style.display = 'none';
+        cryptoFields.style.display = 'block';
+        verifyBtn.style.display = 'none';
+        submitBtn.style.display = 'block';
+      } else {
+        paystackFields.style.display = 'block';
+        cryptoFields.style.display = 'none';
+        if (resolvedRecipient) {
+          verifyBtn.style.display = 'none';
+          submitBtn.style.display = 'block';
+        } else {
+          verifyBtn.style.display = 'block';
+          submitBtn.style.display = 'none';
+        }
+      }
+    });
 
     verifyBtn?.addEventListener('click', async () => {
       const bankCode = document.getElementById('withdraw-bank').value;
@@ -379,16 +402,18 @@ const EFDashboard = {
         alert('Failed to resolve account: ' + e.message);
       } finally {
         verifyBtn.disabled = false;
-        verifyBtn.innerText = 'Verify Account';
+        verifyBtn.innerText = 'Verify Bank Account';
       }
     });
 
     // Reset verification on input change
     const resetForm = () => {
       resolvedRecipient = null;
-      groupName.style.display = 'none';
-      verifyBtn.style.display = 'block';
-      submitBtn.style.display = 'none';
+      if (groupName) groupName.style.display = 'none';
+      if (methodSelect && methodSelect.value === 'paystack_bank') {
+        verifyBtn.style.display = 'block';
+        submitBtn.style.display = 'none';
+      }
     };
 
     document.getElementById('withdraw-bank')?.addEventListener('change', resetForm);
@@ -396,33 +421,52 @@ const EFDashboard = {
 
     document.getElementById('withdrawal-form')?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const method = methodSelect ? methodSelect.value : 'paystack_bank';
       const amount = parseFloat(document.getElementById('withdraw-amount').value);
-
-      if (!resolvedRecipient) {
-        alert('Please verify your account details first.');
-        return;
-      }
 
       if (amount < 1000) {
         alert('Minimum withdrawal amount is 1,000 NGN.');
         return;
       }
 
+      let payload = {
+        method,
+        amount_minor: Math.round(amount * 100),
+      };
+
+      if (method === 'crypto_usdt') {
+        const walletAddress = document.getElementById('withdraw-crypto-address').value;
+        const network = document.getElementById('withdraw-crypto-network').value;
+
+        if (!walletAddress || walletAddress.trim().length < 15) {
+          alert('Please enter a valid USDT crypto wallet address.');
+          return;
+        }
+
+        payload.wallet_address = walletAddress.trim();
+        payload.network = network;
+      } else {
+        if (!resolvedRecipient) {
+          alert('Please verify your bank account details first.');
+          return;
+        }
+
+        payload.bank_code = document.getElementById('withdraw-bank').value;
+        payload.account_number = document.getElementById('withdraw-account').value;
+        payload.account_name = resolvedRecipient.account_name;
+      }
+
       submitBtn.disabled = true;
       submitBtn.innerText = 'Submitting...';
 
       try {
-        const payload = {
-          bank_code: document.getElementById('withdraw-bank').value,
-          account_number: document.getElementById('withdraw-account').value,
-          account_name: resolvedRecipient.account_name,
-          amount_minor: Math.round(amount * 100), // convert to minor unit kobo
-        };
-
         const res = await EF.requestWithdrawal(payload);
-        alert('Withdrawal request submitted! ID: ' + res.withdrawal_id + '. Your funds will be sent shortly.');
+        alert('Withdrawal request submitted! Payout ID: ' + res.withdrawal_id + '. Your cashout is queued.');
         document.getElementById('ef-withdrawal-modal').style.display = 'none';
         document.getElementById('withdraw-amount').value = '';
+        if (document.getElementById('withdraw-crypto-address')) {
+          document.getElementById('withdraw-crypto-address').value = '';
+        }
         resetForm();
         await Promise.all([this.loadWallet(), this.loadActiveTabContent()]);
       } catch (err) {

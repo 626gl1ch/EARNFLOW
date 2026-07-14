@@ -8,6 +8,16 @@ export async function runPayoutBatch(env) {
   const { data: pending } = await supabase.from('withdrawals').select('*').eq('status', 'requested');
 
   for (const w of pending || []) {
+    if (w.method === 'crypto_usdt') {
+      // Crypto withdrawals are queued for automated/manual blockchain batch payout
+      await supabase
+        .from('withdrawals')
+        .update({ status: 'processing' })
+        .eq('id', w.id);
+      continue;
+    }
+
+    // Paystack Payout
     const reference = `earnflow_${w.id}`;
     const result = await initiateTransfer(env, {
       amount_minor: w.amount_minor,

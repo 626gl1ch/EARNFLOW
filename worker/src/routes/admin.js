@@ -88,16 +88,19 @@ export async function handleAdmin(request, env, ctx, json, subpath) {
     });
   }
 
-  // POST /api/admin/owner-bank — update owner payout bank details
+  // POST /api/admin/owner-bank — update owner payout account details (Paystack or Crypto USDT)
   if (subpath === '/owner-bank' && request.method === 'POST') {
     const body = await request.json();
-    const { bank_code, account_number, account_name, auto_payout_enabled, min_payout_minor } = body;
+    const { payout_method = 'paystack', bank_code, account_number, account_name, crypto_network, crypto_address, auto_payout_enabled, min_payout_minor } = body;
 
     const payload = {
       id: 1,
-      bank_code,
-      account_number,
-      account_name,
+      payout_method,
+      bank_code: bank_code || null,
+      account_number: account_number || null,
+      account_name: account_name || null,
+      crypto_network: crypto_network || 'TRC20',
+      crypto_address: crypto_address || null,
       auto_payout_enabled: auto_payout_enabled ?? true,
       min_payout_minor: min_payout_minor || 500000,
       updated_at: new Date().toISOString(),

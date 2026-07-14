@@ -129,40 +129,69 @@
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <!-- OWNER BANK ACCOUNT CONFIG FORM -->
+        <!-- OWNER PAYOUT CONFIG FORM -->
         <div class="admin-card">
-          <h4 style="font-family: var(--font-display); color: #fff; margin-bottom: 15px;">Owner Bank Account (Paystack Target)</h4>
+          <h4 style="font-family: var(--font-display); color: #fff; margin-bottom: 15px;">Owner Revenue Payout Destination</h4>
           <form id="owner-bank-form">
             <div class="ef-form-group">
-              <label for="owner-bank-code">Bank</label>
-              <select id="owner-bank-code" required>
-                <option value="">Select bank...</option>
-                <option value="044">Access Bank</option>
-                <option value="050">Ecobank</option>
-                <option value="070">Fidelity Bank</option>
-                <option value="011">First Bank</option>
-                <option value="058">GTBank</option>
-                <option value="030">Heritage Bank</option>
-                <option value="082">Keystone Bank</option>
-                <option value="101">Providus Bank</option>
-                <option value="221">Stanbic IBTC Bank</option>
-                <option value="068">Standard Chartered</option>
-                <option value="232">Sterling Bank</option>
-                <option value="032">Union Bank</option>
-                <option value="033">United Bank for Africa (UBA)</option>
-                <option value="215">Unity Bank</option>
-                <option value="035">Wema Bank</option>
-                <option value="057">Zenith Bank</option>
+              <label for="owner-method-select">Payout Target Method</label>
+              <select id="owner-method-select" required>
+                <option value="paystack">💳 Paystack Local Bank Account</option>
+                <option value="crypto_usdt">🪙 Crypto (USDT Wallet)</option>
               </select>
             </div>
-            <div class="ef-form-group">
-              <label for="owner-account-num">10-Digit Nuban Account Number</label>
-              <input type="text" id="owner-account-num" required maxlength="10" placeholder="10-digit Nuban" />
+
+            <!-- PAYSTACK BANK DETAILS -->
+            <div id="owner-paystack-fields">
+              <div class="ef-form-group">
+                <label for="owner-bank-code">Bank</label>
+                <select id="owner-bank-code">
+                  <option value="">Select bank...</option>
+                  <option value="044">Access Bank</option>
+                  <option value="050">Ecobank</option>
+                  <option value="070">Fidelity Bank</option>
+                  <option value="011">First Bank</option>
+                  <option value="058">GTBank</option>
+                  <option value="030">Heritage Bank</option>
+                  <option value="082">Keystone Bank</option>
+                  <option value="101">Providus Bank</option>
+                  <option value="221">Stanbic IBTC Bank</option>
+                  <option value="068">Standard Chartered</option>
+                  <option value="232">Sterling Bank</option>
+                  <option value="032">Union Bank</option>
+                  <option value="033">United Bank for Africa (UBA)</option>
+                  <option value="215">Unity Bank</option>
+                  <option value="035">Wema Bank</option>
+                  <option value="057">Zenith Bank</option>
+                </select>
+              </div>
+              <div class="ef-form-group">
+                <label for="owner-account-num">10-Digit Nuban Account Number</label>
+                <input type="text" id="owner-account-num" maxlength="10" placeholder="10-digit Nuban" />
+              </div>
+              <div class="ef-form-group">
+                <label for="owner-account-name">Account Holder Name</label>
+                <input type="text" id="owner-account-name" placeholder="Full name registered on bank account" />
+              </div>
             </div>
-            <div class="ef-form-group">
-              <label for="owner-account-name">Account Holder Name</label>
-              <input type="text" id="owner-account-name" required placeholder="Full name registered on bank account" />
+
+            <!-- CRYPTO USDT DETAILS -->
+            <div id="owner-crypto-fields" style="display:none;">
+              <div class="ef-form-group">
+                <label for="owner-crypto-network">Blockchain Network</label>
+                <select id="owner-crypto-network">
+                  <option value="TRC20">USDT (TRC20 - TRON)</option>
+                  <option value="BEP20">USDT (BEP20 - BNB Smart Chain)</option>
+                  <option value="POLYGON">USDT (Polygon)</option>
+                  <option value="ERC20">USDT (ERC20 - Ethereum)</option>
+                </select>
+              </div>
+              <div class="ef-form-group">
+                <label for="owner-crypto-address">Owner USDT Wallet Address</label>
+                <input type="text" id="owner-crypto-address" placeholder="e.g. T..." style="font-family:var(--font-mono);font-size:0.85rem;" />
+              </div>
             </div>
+
             <button class="ef-btn ef-btn-primary" type="submit" style="width: 100%; margin-top: 10px;">Save Owner Payout Account</button>
           </form>
         </div>
@@ -359,6 +388,21 @@
   });
 
   // Owner Revenue loader & management
+  const ownerMethodSelect = document.getElementById('owner-method-select');
+  const ownerPaystackFields = document.getElementById('owner-paystack-fields');
+  const ownerCryptoFields = document.getElementById('owner-crypto-fields');
+
+  ownerMethodSelect?.addEventListener('change', () => {
+    const isCrypto = ownerMethodSelect.value === 'crypto_usdt';
+    if (isCrypto) {
+      ownerPaystackFields.style.display = 'none';
+      ownerCryptoFields.style.display = 'block';
+    } else {
+      ownerPaystackFields.style.display = 'block';
+      ownerCryptoFields.style.display = 'none';
+    }
+  });
+
   async function loadOwnerRevenue() {
     try {
       const res = await fetch(`${API_BASE}/api/admin/owner-revenue`, { headers: await getHeaders() });
@@ -370,10 +414,20 @@
       document.getElementById('owner-balance-text').innerText = `₦${(wallet.balance_minor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
       document.getElementById('owner-lifetime-text').innerText = `₦${(wallet.lifetime_commission_minor / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}`;
 
+      if (config.payout_method) {
+        ownerMethodSelect.value = config.payout_method;
+        ownerMethodSelect.dispatchEvent(new Event('change'));
+      }
+
       if (config.bank_code) {
         document.getElementById('owner-bank-code').value = config.bank_code;
-        document.getElementById('owner-account-num').value = config.account_number;
-        document.getElementById('owner-account-name').value = config.account_name;
+        document.getElementById('owner-account-num').value = config.account_number || '';
+        document.getElementById('owner-account-name').value = config.account_name || '';
+      }
+
+      if (config.crypto_address) {
+        document.getElementById('owner-crypto-network').value = config.crypto_network || 'TRC20';
+        document.getElementById('owner-crypto-address').value = config.crypto_address || '';
       }
 
       const commissionTbody = document.getElementById('owner-commission-tbody');
@@ -395,21 +449,40 @@
     }
   }
 
-  // Save Owner Bank details form
+  // Save Owner Payout Account form (Paystack or Crypto)
   document.getElementById('owner-bank-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const bank_code = document.getElementById('owner-bank-code').value;
-    const account_number = document.getElementById('owner-account-num').value;
-    const account_name = document.getElementById('owner-account-name').value;
+    const payout_method = ownerMethodSelect.value;
+
+    const payload = {
+      payout_method,
+      auto_payout_enabled: true,
+    };
+
+    if (payout_method === 'crypto_usdt') {
+      const crypto_address = document.getElementById('owner-crypto-address').value;
+      const crypto_network = document.getElementById('owner-crypto-network').value;
+
+      if (!crypto_address || crypto_address.trim().length < 15) {
+        alert('Please enter a valid owner USDT crypto wallet address.');
+        return;
+      }
+      payload.crypto_address = crypto_address.trim();
+      payload.crypto_network = crypto_network;
+    } else {
+      payload.bank_code = document.getElementById('owner-bank-code').value;
+      payload.account_number = document.getElementById('owner-account-num').value;
+      payload.account_name = document.getElementById('owner-account-name').value;
+    }
 
     try {
       const res = await fetch(`${API_BASE}/api/admin/owner-bank`, {
         method: 'POST',
         headers: await getHeaders(),
-        body: JSON.stringify({ bank_code, account_number, account_name, auto_payout_enabled: true })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
-        alert('Owner Payout Account saved successfully! Daily 50% profits will transfer to this bank account.');
+        alert('Owner Payout Account saved successfully! Daily 50% profits will transfer to your chosen target.');
         loadOwnerRevenue();
       } else {
         const err = await res.json();

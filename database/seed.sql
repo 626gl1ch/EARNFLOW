@@ -16,9 +16,9 @@ insert into public.task_categories (slug, name, description, default_commission_
 on conflict (slug) do nothing;
 
 insert into public.payout_config (country_code, min_withdrawal_minor, currency, supported_methods) values
-  ('NG', 100000, 'NGN', array['paystack_bank','paystack_mobile_money']),
-  ('GH', 5000, 'GHS', array['paystack_mobile_money']),
-  ('KE', 50000, 'KES', array['paystack_mobile_money'])
+  ('NG', 100000, 'NGN', array['paystack_bank','paystack_mobile_money','crypto_usdt']),
+  ('GH', 5000, 'GHS', array['paystack_mobile_money','crypto_usdt']),
+  ('KE', 50000, 'KES', array['paystack_mobile_money','crypto_usdt'])
 on conflict (country_code) do nothing;
 
 -- Example tasks (GLOBAL + Nigeria-only) for local dev
