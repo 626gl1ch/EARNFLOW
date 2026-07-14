@@ -155,8 +155,7 @@ create table public.task_completions (
   rejection_reason text,
   started_at timestamptz not null default now(),
   completed_at timestamptz,
-  paid_at timestamptz,
-  unique (task_id, user_id)               -- enforced app-side only when tasks.once_per_user = true
+  paid_at timestamptz
 );
 create index idx_completions_user on public.task_completions(user_id, status);
 create index idx_completions_task on public.task_completions(task_id);

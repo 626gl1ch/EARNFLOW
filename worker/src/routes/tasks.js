@@ -52,6 +52,20 @@ export async function handleTasks(request, env, ctx, json, subpath) {
       return json({ error: 'task_inactive' }, 400);
     }
 
+    if (task.once_per_user) {
+      const { data: existing } = await supabase
+        .from('task_completions')
+        .select('id')
+        .eq('task_id', taskId)
+        .eq('user_id', user.id)
+        .neq('status', 'rejected')
+        .limit(1);
+      
+      if (existing && existing.length > 0) {
+        return json({ error: 'already_completed', message: 'This task can only be completed once.' }, 400);
+      }
+    }
+
     const { data, error } = await supabase
       .from('task_completions')
       .insert({

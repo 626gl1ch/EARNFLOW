@@ -54,7 +54,7 @@ export async function handleAuth(request, env, ctx, json, subpath) {
     await supabase.from('profiles').upsert({
       id: user.id,
       display_name: displayName,
-      country_code: risk.country_code,
+      country_code: risk.country_code || 'NG',
       country_status,
       ...(referrerId ? { referred_by: referrerId } : {}),
     });

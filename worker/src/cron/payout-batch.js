@@ -5,7 +5,7 @@ import { initiateTransfer } from '../lib/paystack.js';
 export async function runPayoutBatch(env) {
   const supabase = serviceClient(env);
 
-  const { data: pending } = await supabase.from('withdrawals').select('*').eq('status', 'requested');
+  const { data: pending } = await supabase.from('withdrawals').select('*').eq('status', 'requested').limit(100);
 
   for (const w of pending || []) {
     if (w.method === 'crypto_usdt') {

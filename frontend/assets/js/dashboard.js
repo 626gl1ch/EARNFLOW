@@ -196,7 +196,7 @@ const EFDashboard = {
         <div class="ef-card" style="max-width:500px;margin-top:20px;cursor:default;">
           <h4 style="font-family:var(--font-display);margin-bottom:15px;color:#fff;">Account Details</h4>
           <div style="display:flex;flex-direction:column;gap:12px;font-size:0.95rem;opacity:0.9;margin-bottom:24px;">
-            <div><strong>Email:</strong> ${sb.auth.user()?.email || 'N/A'}</div>
+            <div><strong>Email:</strong> ${(await getSupabaseSession())?.user?.email || 'N/A'}</div>
             <div><strong>Country:</strong> ${this.userProfile?.country_code || 'GLOBAL'} (${this.userProfile?.country_status || 'unverified'})</div>
             <div><strong>Tier:</strong> <span style="text-transform:capitalize;color:var(--gold);font-weight:600;">${this.userProfile?.tier || 'bronze'}</span></div>
           </div>
