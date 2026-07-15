@@ -66,14 +66,19 @@ export default {
 
   // Cron Triggers configured in wrangler.toml (see [triggers] block)
   async scheduled(event, env, ctx) {
-    const { runExpireTasks } = await import('./cron/expire-tasks.js');
-    const { runPayoutBatch } = await import('./cron/payout-batch.js');
-    const { runFraudSweep } = await import('./cron/fraud-sweep.js');
-    const { runOwnerPayout } = await import('./cron/owner-payout.js');
+    const { runExpireTasks }           = await import('./cron/expire-tasks.js');
+    const { runPayoutBatch }           = await import('./cron/payout-batch.js');
+    const { runFraudSweep }            = await import('./cron/fraud-sweep.js');
+    const { runOwnerPayout }           = await import('./cron/owner-payout.js');
+    const { confirmPendingCompletions } = await import('./cron/confirm-pending.js');
 
     switch (event.cron) {
       case '*/15 * * * *':
         ctx.waitUntil(runExpireTasks(env));
+        break;
+      case '0 * * * *':
+        // Every hour: promote CPA completions past their confirmation window
+        ctx.waitUntil(confirmPendingCompletions(env));
         break;
       case '0 2 * * *':
         ctx.waitUntil(runPayoutBatch(env));
@@ -85,3 +90,4 @@ export default {
     }
   },
 };
+

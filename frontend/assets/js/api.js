@@ -38,16 +38,53 @@ async function efFetch(path, options = {}) {
   return res.json();
 }
 
+/**
+ * Raw fetch — returns the Response object (not parsed JSON).
+ * Use when you need pagination meta, raw status, or to parse yourself.
+ */
+async function efRaw(path, method = 'GET', body = null) {
+  const session = await getSupabaseSession();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+  };
+  return fetch(`${EF_API_BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+}
+
 const EF = {
-  getFeed: (page = 1) => efFetch(`/api/tasks/feed?page=${page}`),
-  getOffers: () => efFetch('/api/offers'),
-  getSurveys: () => efFetch('/api/surveys'),
-  getWallet: () => efFetch('/api/wallet'),
-  getLedger: (limit = 25) => efFetch(`/api/wallet/ledger?limit=${limit}`),
-  startTask: (taskId) => efFetch(`/api/tasks/${taskId}/start`, { method: 'POST', body: JSON.stringify({}) }),
+  // Core feed + wallet
+  getFeed:    (page = 1)       => efFetch(`/api/tasks/feed?page=${page}`),
+  getOffers:  ()               => efFetch('/api/offers'),
+  getSurveys: ()               => efFetch('/api/surveys'),
+  getWallet:  ()               => efFetch('/api/wallet'),
+  getLedger:  (limit = 25)     => efFetch(`/api/wallet/ledger?limit=${limit}`),
+
+  // Task lifecycle
+  startTask: (taskId) =>
+    efFetch(`/api/tasks/${taskId}/start`, { method: 'POST', body: JSON.stringify({}) }),
   submitCompletion: (completionId, payload) =>
     efFetch(`/api/tasks/completions/${completionId}/submit`, { method: 'POST', body: JSON.stringify(payload) }),
-  resolveAccount: (payload) => efFetch('/api/withdrawals/resolve-account', { method: 'POST', body: JSON.stringify(payload) }),
+  dismissCompletion: (completionId) =>
+    efRaw(`/api/tasks/completions/${completionId}/dismiss`, 'DELETE'),
+
+  // Earnings tracking (new v2 endpoints)
+  getEarnings:    ()                        => efRaw('/api/tasks/earnings-by-category', 'GET'),
+  getTaskHistory: (status = 'paid', page = 1) => efRaw(`/api/tasks/history?status=${status}&page=${page}`, 'GET'),
+
+  // Withdrawals
+  resolveAccount:    (payload) => efFetch('/api/withdrawals/resolve-account', { method: 'POST', body: JSON.stringify(payload) }),
   requestWithdrawal: (payload) => efFetch('/api/withdrawals', { method: 'POST', body: JSON.stringify(payload) }),
+
+  // Misc
   fraudCheck: () => efFetch('/api/fraud/check'),
+
+  /**
+   * Generic raw API call — returns raw Response.
+   * Used by dashboard.js for endpoints that need pagination meta.
+   */
+  api: (path, method = 'GET', body = null) => efRaw(path, method, body),
 };

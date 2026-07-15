@@ -119,7 +119,7 @@ create table public.tasks (
   category_id uuid not null references public.task_categories(id),
   provider text not null,                 -- 'cpalead','adgatemedia','offertoro','mylead',
                                             -- 'bitlabs','cpxresearch','theoremreach',
-                                            -- 'adsterra','propellerads','inhouse'
+                                            -- 'adsterra','propellerads','monetag','inhouse'
   provider_offer_id text,                 -- id in provider's system, null for inhouse tasks
   title text not null,
   description text,
@@ -128,12 +128,18 @@ create table public.tasks (
   country_scope text[] not null default array['GLOBAL'],  -- ['GLOBAL'] or e.g. ['NG','GH','KE']
   requirements jsonb not null default '{}'::jsonb,          -- {os:['android'], min_age:18, ...}
   gross_minor bigint not null,             -- what provider pays EarnFlow
-  payout_minor bigint not null,            -- what user receives (gross - commission)
+  payout_minor bigint not null,            -- what user receives (50% of gross per complete_task fn)
   currency char(3) not null default 'NGN',
   once_per_user boolean not null default true,
   daily_cap int,
   total_cap int,
   total_completions int not null default 0,
+  -- CPA confirmation window: how many hours after postback before we release funds to user.
+  -- 0 = instant credit (in-house tasks, ad views, captcha).
+  -- 24 = typical CPA offer lock period.
+  -- 720 = 30 days for high-value CPA installs that network may claw back.
+  -- Do NOT set to 0 for any external CPA/survey/PPC provider.
+  confirmation_window_hours int not null default 0,
   is_active boolean not null default true,
   starts_at timestamptz not null default now(),
   ends_at timestamptz,
@@ -142,23 +148,59 @@ create table public.tasks (
 create index idx_tasks_active_category on public.tasks(category_id, is_active);
 create index idx_tasks_country_scope on public.tasks using gin (country_scope);
 
+
 create table public.task_completions (
   id uuid primary key default uuid_generate_v4(),
   task_id uuid not null references public.tasks(id),
   user_id uuid not null references public.profiles(id) on delete cascade,
   status text not null default 'pending'
-    check (status in ('pending','verified','paid','rejected','flagged')),
+    check (status in (
+      'pending',            -- user started; awaiting provider postback
+      'pending_confirmation', -- CPA postback received; holding for confirmation window
+      'verified',           -- in-house tasks: submission accepted and ready to pay
+      'paid',               -- ledger credited; balance updated
+      'rejected',           -- provider reversed/chargeback or failed in-house check
+      'flagged'             -- auto-flagged for fraud review before any credit
+    )),
   provider_postback_payload jsonb,
   ip_address inet,
   device_fingerprint_hash text,
   time_to_complete_seconds int,
   rejection_reason text,
+  -- For CPA networks: the confirmation_window_hours defines how long
+  -- we wait for the network to NOT reverse before we credit the user.
+  -- Funds sit in wallets.pending_minor during this window.
+  confirmation_window_hours int not null default 0,
+  confirmed_at timestamptz,   -- set when the confirmation window passes or provider confirms
   started_at timestamptz not null default now(),
   completed_at timestamptz,
   paid_at timestamptz
 );
 create index idx_completions_user on public.task_completions(user_id, status);
 create index idx_completions_task on public.task_completions(task_id);
+create index idx_completions_pending_confirm on public.task_completions(status, confirmed_at)
+  where status = 'pending_confirmation';
+
+-- ============================================================================
+-- Per-category earnings summary (used by /api/tasks/earnings-by-category)
+-- ============================================================================
+create or replace view public.user_category_earnings as
+select
+  tc.user_id,
+  cat.slug as category_slug,
+  cat.name as category_name,
+  cat.icon as category_icon,
+  count(tc.id)::int as completed_count,
+  coalesce(sum(le.amount_minor), 0)::bigint as total_earned_minor,
+  max(tc.paid_at) as last_earned_at
+from public.task_completions tc
+join public.tasks t on t.id = tc.task_id
+join public.task_categories cat on cat.id = t.category_id
+left join public.ledger_entries le
+  on le.related_task_completion_id = tc.id
+  and le.entry_type = 'task_credit'
+where tc.status = 'paid'
+group by tc.user_id, cat.slug, cat.name, cat.icon;
 
 -- ============================================================================
 -- 4. FRAUD / RISK

@@ -219,6 +219,12 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* Skeleton pulse for earnings tracker loading state */
+@keyframes ef-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.25; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ef-reveal, .ef-ledger-line, .ef-digit.flip { animation: none !important; }
 }

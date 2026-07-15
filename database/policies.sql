@@ -54,3 +54,12 @@ create policy "admin read owner_withdrawals" on public.owner_withdrawals for sel
 -- No client-side write policies exist for wallets, ledger_entries, owner_wallets, or task_completions.status transitions
 -- to 'verified'/'paid' — those only ever happen via security-definer functions called by the Worker using service role key.
 
+-- Grant read access on user_category_earnings view (secure because view itself filters by user_id)
+alter table public.kyc_country_verifications enable row level security;
+create policy "own kyc" on public.kyc_country_verifications for select using (auth.uid() = user_id);
+
+-- Note: Views don't support direct RLS — the view uses SECURITY INVOKER by default,
+-- so the underlying table RLS on task_completions and ledger_entries already scopes it.
+-- The Worker endpoint /api/tasks/earnings-by-category uses the service role key and
+-- filters by user_id in the query — safe.
+

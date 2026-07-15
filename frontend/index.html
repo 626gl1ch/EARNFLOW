@@ -151,13 +151,12 @@
         <div class="figure" id="ef-balance-figure">
           <span id="ef-currency">₦</span><span class="ef-balance" id="ef-balance-digits">0.00</span>
         </div>
+        <!-- Pending balance from CPA offers in confirmation window -->
+        <div id="ef-pending-balance" style="display:none;margin-top:4px;"></div>
       </div>
       <button class="ef-btn ef-btn-primary" id="btn-withdraw">Withdraw</button>
     </div>
-
-    <div class="ef-grid" id="ef-task-feed">
-      <!-- populated by dashboard.js via GET /api/tasks/feed -->
-    </div>
+    <!-- All view content is injected here by dashboard.js -->
   </main>
 </div>
 

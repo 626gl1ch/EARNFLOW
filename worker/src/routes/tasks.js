@@ -28,6 +28,20 @@ export async function handleTasks(request, env, ctx, json, subpath) {
       return json({ error: 'rate_limited', message: 'Slow down. You are starting tasks too quickly.' }, 429);
     }
 
+    // Limit max concurrent active 'pending' tasks to 5 per user
+    const { count: pendingCount } = await supabase
+      .from('task_completions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('status', 'pending');
+
+    if (pendingCount >= 5) {
+      return json({ 
+        error: 'max_concurrent_tasks', 
+        message: 'You have too many tasks in progress. Complete or dismiss some before starting new ones.' 
+      }, 400);
+    }
+
     const taskId = startMatch[1];
     const body = await request.json().catch(() => ({}));
     const ip = request.headers.get('CF-Connecting-IP') || '0.0.0.0';
@@ -192,6 +206,109 @@ export async function handleTasks(request, env, ctx, json, subpath) {
     );
 
     return json({ ok: true });
+  }
+
+  // GET /api/tasks/earnings-by-category — per-category breakdown for dashboard tracker
+  if (subpath === '/earnings-by-category' && request.method === 'GET') {
+    const { data, error } = await supabase
+      .from('user_category_earnings')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('total_earned_minor', { ascending: false });
+
+    if (error) return json({ error: 'query_failed', message: error.message }, 500);
+
+    const { data: wallet } = await supabase
+      .from('wallets')
+      .select('balance_minor, pending_minor, currency')
+      .eq('user_id', user.id)
+      .single();
+
+    const totalEarned = (data || []).reduce((sum, r) => sum + Number(r.total_earned_minor), 0);
+
+    return json({
+      categories: data || [],
+      total_earned_minor: totalEarned,
+      pending_minor: wallet?.pending_minor || 0,
+      balance_minor: wallet?.balance_minor || 0,
+      currency: wallet?.currency || 'NGN',
+    });
+  }
+
+  // GET /api/tasks/history?status=paid&page=1 — user's completed tasks
+  if (subpath.startsWith('/history') && request.method === 'GET') {
+    const url = new URL(request.url);
+    const page    = Number(url.searchParams.get('page') || '1');
+    const status  = url.searchParams.get('status') || 'paid';
+    const perPage = 20;
+    const offset  = (page - 1) * perPage;
+
+    const statusList = status === 'all'
+      ? ['paid', 'pending_confirmation', 'pending', 'rejected']
+      : [status];
+
+    const { data, count, error } = await supabase
+      .from('task_completions')
+      .select(`
+        id, status, started_at, completed_at, paid_at, confirmed_at,
+        tasks(
+          id, title, description, payout_minor, currency, provider,
+          task_categories(name, slug, icon)
+        )
+      `, { count: 'exact' })
+      .eq('user_id', user.id)
+      .in('status', statusList)
+      .order('started_at', { ascending: false })
+      .range(offset, offset + perPage - 1);
+
+    if (error) return json({ error: 'query_failed', message: error.message }, 500);
+
+    return json({
+      completions: data || [],
+      total: count || 0,
+      page,
+      per_page: perPage,
+      pages: Math.ceil((count || 0) / perPage),
+    });
+  }
+
+  // DELETE /api/tasks/completions/:id/dismiss
+  const dismissMatch = subpath.match(/^\/completions\/([0-9a-f-]{36})\/dismiss$/);
+  if (dismissMatch && request.method === 'DELETE') {
+    const completionId = dismissMatch[1];
+
+    const { data: completion } = await supabase
+      .from('task_completions')
+      .select('id, status, user_id')
+      .eq('id', completionId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!completion) return json({ error: 'not_found' }, 404);
+
+    if (!['paid', 'rejected', 'pending_confirmation'].includes(completion.status)) {
+      return json({ error: 'cannot_dismiss_in_progress_task' }, 400);
+    }
+
+    // Merge _dismissed flag into existing JSONB payload
+    const { data: c } = await supabase
+      .from('task_completions')
+      .select('provider_postback_payload')
+      .eq('id', completionId)
+      .single();
+
+    const merged = {
+      ...(c?.provider_postback_payload || {}),
+      _dismissed: true,
+      _dismissed_at: new Date().toISOString(),
+    };
+
+    await supabase
+      .from('task_completions')
+      .update({ provider_postback_payload: merged })
+      .eq('id', completionId);
+
+    return json({ ok: true, dismissed: true });
   }
 
   return null;

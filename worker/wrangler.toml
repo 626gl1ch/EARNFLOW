@@ -8,7 +8,12 @@ kv_namespaces = [
 ]
 
 [triggers]
-crons = ["*/15 * * * *", "0 2 * * *", "0 */6 * * *"]
+crons = ["*/15 * * * *", "0 * * * *", "0 2 * * *", "0 */6 * * *"]
+# */15 * * * *  = expire stale tasks (every 15 min)
+# 0 * * * *     = confirm CPA pending_confirmation → paid (every hour)
+# 0 2 * * *     = daily payout batch + owner revenue sweep (2am)
+# 0 */6 * * *   = fraud sweep (every 6hrs)
+
 
 # Secrets (set via `wrangler secret put <NAME>`, never committed):
 #   SUPABASE_URL
@@ -24,7 +29,10 @@ crons = ["*/15 * * * *", "0 2 * * *", "0 */6 * * *"]
 #   POSTBACK_SECRET_MYLEAD
 #   POSTBACK_SECRET_BITLABS
 #   POSTBACK_SECRET_CPXRESEARCH
+#   POSTBACK_SECRET_THEOREMREACH
+#   PAYSTACK_WEBHOOK_SECRET
 #   RESEND_API_KEY
+
 
 [vars]
 DEBUG = "false"
