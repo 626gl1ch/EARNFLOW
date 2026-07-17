@@ -28,6 +28,15 @@ const EFDashboard = {
       if (!session) return;
       const { data: profile } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
       this.userProfile = profile;
+      
+      const sidebarName = document.getElementById('sidebar-name');
+      const sidebarTier = document.getElementById('sidebar-tier');
+      const sidebarAvatar = document.getElementById('sidebar-avatar');
+      if (sidebarName && profile) {
+        sidebarName.innerText = profile.display_name || 'User';
+        if (sidebarTier) sidebarTier.innerText = profile.tier || 'BRONZE';
+        if (sidebarAvatar) sidebarAvatar.innerText = (profile.display_name || 'U').charAt(0).toUpperCase();
+      }
     } catch (e) {
       console.error('Failed to load user profile', e);
     }
@@ -167,7 +176,7 @@ const EFDashboard = {
         <p style="opacity:0.7;font-size:0.9rem;margin-bottom:16px;">Track every task you've completed, how much you've earned from each, and your current status.</p>
         <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
           <button class="ef-btn ef-btn-primary ef-history-filter active" data-status="paid" style="padding:8px 18px;font-size:0.85rem;">✅ Paid</button>
-          <button class="ef-btn ef-btn-ghost ef-history-filter" data-status="pending_confirmation" style="padding:8px 18px;font-size:0.85rem;">⏳ Pending</button>
+          <button class="ef-btn ef-btn-ghost ef-history-filter" data-status="pending,pending_confirmation" style="padding:8px 18px;font-size:0.85rem;">⏳ Pending</button>
           <button class="ef-btn ef-btn-ghost ef-history-filter" data-status="rejected" style="padding:8px 18px;font-size:0.85rem;">❌ Rejected</button>
           <button class="ef-btn ef-btn-ghost ef-history-filter" data-status="all" style="padding:8px 18px;font-size:0.85rem;">All</button>
         </div>
@@ -380,10 +389,8 @@ const EFDashboard = {
       }
 
       grid.innerHTML = items.map(t => this.renderCard(t)).join('');
-      grid.querySelectorAll('[data-task-id]').forEach(card => {
+      grid.querySelectorAll('.ef-card[data-task-id]').forEach(card => {
         card.addEventListener('click', (e) => {
-          // Don't start task if user clicked the dismiss button
-          if (e.target.closest('.ef-dismiss-btn')) return;
           this.startTask(card.dataset.taskId);
         });
       });
@@ -403,9 +410,8 @@ const EFDashboard = {
 
       if (data.tasks && data.tasks.length) {
         taskGrid.innerHTML = data.tasks.map(t => this.renderCard(t)).join('');
-        taskGrid.querySelectorAll('[data-task-id]').forEach(card => {
+        taskGrid.querySelectorAll('.ef-card[data-task-id]').forEach(card => {
           card.addEventListener('click', (e) => {
-            if (e.target.closest('.ef-dismiss-btn')) return;
             this.startTask(card.dataset.taskId);
           });
         });
@@ -443,11 +449,6 @@ const EFDashboard = {
 
     return `
       <div class="ef-card ef-reveal" data-task-id="${task.id}" style="position:relative;">
-        <!-- Dismiss button (only shown after completion for already-done tasks) -->
-        <button class="ef-dismiss-btn" data-task-id="${task.id}"
-          style="position:absolute;top:10px;right:10px;background:none;border:none;
-                 color:var(--mint);opacity:0.35;font-size:1rem;cursor:pointer;padding:4px;line-height:1;"
-          title="Dismiss">×</button>
         <div class="cat">${task.task_categories?.name || ''}</div>
         <h3>${task.title}</h3>
         <p style="font-size:0.85rem;opacity:0.8;margin:8px 0;max-height:40px;overflow:hidden;text-overflow:ellipsis;">${task.description || ''}</p>
@@ -495,6 +496,15 @@ const EFDashboard = {
         // Mark as "started" — track for this session so it floats to bottom
         this._sessionCompletedTaskIds.add(taskId);
         this._dimTaskCard(taskId, 'Started — awaiting confirmation');
+        
+        // Silently refresh wallet and history if visible
+        await Promise.all([this.loadWallet(), this.loadEarningsTracker()]);
+        const histContainer = document.getElementById('ef-history-container');
+        if (histContainer) {
+          const activeFilter = document.querySelector('.ef-history-filter.active');
+          const status = activeFilter ? activeFilter.dataset.status : 'paid';
+          this.loadCompletedTasksTable(status);
+        }
       } else {
         this._showToast('Task started! Completion ID: ' + completionId, 'info');
       }

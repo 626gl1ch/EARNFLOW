@@ -27,13 +27,23 @@ export async function getPersonalizedFeed(supabase, profile, { page = 1, pageSiz
   // Exclude tasks already completed (once_per_user) and over-cap tasks.
   const { data: completed } = await supabase
     .from('task_completions')
-    .select('task_id')
+    .select('task_id, status')
     .eq('user_id', profile.id)
     .neq('status', 'rejected');
-  const completedIds = new Set((completed || []).map((c) => c.task_id));
+  
+  const completedIds = new Set();
+  const activePendingIds = new Set();
+  (completed || []).forEach(c => {
+    if (['paid', 'verified'].includes(c.status)) completedIds.add(c.task_id);
+    if (['pending', 'pending_confirmation'].includes(c.status)) activePendingIds.add(c.task_id);
+  });
 
   const eligible = tasks.filter((t) => {
+    // If the user is currently attempting this task, never show it again until they finish/fail
+    if (activePendingIds.has(t.id)) return false;
+    // If it's a once-off task and they finished it, hide it
     if (t.once_per_user && completedIds.has(t.id)) return false;
+    // Check global capacity
     if (t.total_cap && t.total_completions >= t.total_cap) return false;
     return true;
   });

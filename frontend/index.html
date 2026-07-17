@@ -122,7 +122,14 @@
 <!-- ==================== DASHBOARD (shown when logged in) ==================== -->
 <div id="ef-app" class="ef-app" style="display:none;">
   <aside class="ef-sidebar">
-    <div class="ef-logo">Earn<span>Flow</span></div>
+    <div class="ef-logo" style="margin-bottom: 20px;">Earn<span>Flow</span></div>
+    <div class="ef-sidebar-profile" style="margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--gold); color: var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 1.2rem;" id="sidebar-avatar">?</div>
+      <div>
+        <div id="sidebar-name" style="color: #fff; font-weight: 600; font-size: 0.95rem; text-transform: capitalize;">User</div>
+        <div id="sidebar-tier" style="font-size: 0.75rem; color: var(--gold); text-transform: uppercase; font-family: var(--font-mono); margin-top: 2px;">BRONZE</div>
+      </div>
+    </div>
     <nav class="ef-nav">
       <a href="#/dashboard" class="active">🏠 Dashboard</a>
       <a href="#/tasks">🧩 Tasks</a>

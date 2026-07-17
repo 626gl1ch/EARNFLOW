@@ -245,7 +245,7 @@ export async function handleTasks(request, env, ctx, json, subpath) {
 
     const statusList = status === 'all'
       ? ['paid', 'pending_confirmation', 'pending', 'rejected']
-      : [status];
+      : status.split(',');
 
     const { data, count, error } = await supabase
       .from('task_completions')
