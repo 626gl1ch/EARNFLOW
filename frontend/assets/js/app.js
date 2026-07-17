@@ -27,7 +27,7 @@ function renderCategoryPreview() {
   if (!grid) return;
   grid.innerHTML = CATEGORY_PREVIEW.map(
     (c) => `
-    <div class="ef-card">
+    <div class="ef-card" style="cursor: pointer;" onclick="showAuthModal('signup')">
       <div class="cat">${c.slug.replace('_', ' ')}</div>
       <h3>${c.name}</h3>
       <p style="opacity:0.75;font-size:0.9rem;">${c.desc}</p>
