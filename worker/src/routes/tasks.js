@@ -59,7 +59,7 @@ export async function handleTasks(request, env, ctx, json, subpath) {
       .single();
 
     if (taskErr || !task) {
-      return json({ error: 'task_not_found' }, 404);
+      return json({ error: 'task_not_found', message: 'The requested task could not be found or has been removed.' }, 404);
     }
 
     if (!task.is_active) {
@@ -128,7 +128,9 @@ export async function handleTasks(request, env, ctx, json, subpath) {
       .eq('user_id', user.id)
       .single();
 
-    if (!completion) return json({ error: 'not_found' }, 404);
+    if (!completion) {
+      return json({ error: 'not_found', message: 'Completion record not found.' }, 404);
+    }
     if (completion.tasks.provider !== 'inhouse') {
       return json({ error: 'provider_verifies_this_category' }, 400);
     }

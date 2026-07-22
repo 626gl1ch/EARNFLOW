@@ -12,6 +12,6 @@
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
-    "wrangler": "^3.80.0"
+    "wrangler": "^4.110.0"
   }
 }

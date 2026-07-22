@@ -84,6 +84,9 @@ const EFDashboard = {
       const solution = document.getElementById('captcha-input').value;
       if (!this.activeCompletionId) return;
 
+      const submitBtn = document.getElementById('btn-captcha-submit');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = 'Verifying...'; }
+
       try {
         await EF.submitCompletion(this.activeCompletionId, { solution });
         this._showToast('✅ Captcha solved! Earnings added to your wallet.', 'success');
@@ -93,6 +96,16 @@ const EFDashboard = {
         await Promise.all([this.loadWallet(), this.loadActiveTabContent()]);
       } catch (err) {
         this._showToast(err.message || 'Verification failed. Try again.', 'error');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = 'Submit & Earn'; }
+      }
+    });
+
+    // Support enter key natively without requiring explicit form submit click
+    document.getElementById('captcha-input')?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('captcha-form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
       }
     });
   },
@@ -515,13 +528,13 @@ const EFDashboard = {
 
   // ─────────────────────────── Completed Tasks History ──────────────────────
 
-  async loadCompletedTasksTable(status = 'paid') {
+  async loadCompletedTasksTable(status = 'paid', page = 1) {
     const container = document.getElementById('ef-history-container');
     if (!container) return;
     container.innerHTML = '<p style="padding:20px;opacity:0.6;">Loading...</p>';
 
     try {
-      const res = await EF.api(`/api/tasks/history?status=${status}&page=1`, 'GET');
+      const res = await EF.api(`/api/tasks/history?status=${status}&page=${page}`, 'GET');
       const data = await res.json();
 
       const completions = data.completions || [];
@@ -582,9 +595,15 @@ const EFDashboard = {
               <th>Date</th>
             </tr>
           </thead>
-          <tbody>${rows}</tbody>
+          <tbody>${rows}          </tbody>
         </table>
-        ${data.pages > 1 ? `<p style="padding:12px 18px;opacity:0.5;font-size:0.82rem;">Page 1 of ${data.pages} · ${data.total} total</p>` : ''}
+        ${data.pages > 1 ? `
+          <div style="padding:12px 18px; display:flex; gap:10px; align-items:center;">
+            <button class="ef-btn ef-btn-ghost" onclick="window.EFDashboard.loadCompletedTasksTable('${status}', ${data.page - 1})" ${data.page <= 1 ? 'disabled' : ''} style="padding:4px 10px;font-size:0.8rem;">Prev</button>
+            <span style="opacity:0.6;font-size:0.82rem;">Page ${data.page} of ${data.pages} · ${data.total} total</span>
+            <button class="ef-btn ef-btn-ghost" onclick="window.EFDashboard.loadCompletedTasksTable('${status}', ${data.page + 1})" ${data.page >= data.pages ? 'disabled' : ''} style="padding:4px 10px;font-size:0.8rem;">Next</button>
+          </div>
+        ` : ''}
       `;
     } catch (e) {
       container.innerHTML = `<p style="padding:20px;color:var(--coral);">Failed to load task history.</p>`;
@@ -643,10 +662,14 @@ const EFDashboard = {
           verifyBtn.style.display = 'none';
           submitBtn.style.display = 'block';
         } else {
-          throw new Error(res.message || 'Verification failed');
+          this._showToast(res.message || 'Verification failed. Please check your account details.', 'error');
+          nameBox.innerText = '';
+          groupName.style.display = 'none';
         }
       } catch (e) {
         this._showToast('Failed to resolve account: ' + e.message, 'error');
+        nameBox.innerText = '';
+        groupName.style.display = 'none';
       } finally {
         verifyBtn.disabled = false;
         verifyBtn.innerText = 'Verify Bank Account';

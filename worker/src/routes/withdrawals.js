@@ -25,8 +25,10 @@ export async function handleWithdrawals(request, env, ctx, json, subpath) {
       .eq('country_code', profile?.country_code || 'NG')
       .single();
 
-    if (config && amount_minor < config.min_withdrawal_minor) {
-      return json({ error: 'below_minimum', min_withdrawal_minor: config.min_withdrawal_minor }, 400);
+    const minWithdrawalMinor = config?.min_withdrawal_minor || 100000; // Default 1000 NGN (100,000 minor)
+
+    if (amount_minor < minWithdrawalMinor) {
+      return json({ error: 'below_minimum', min_withdrawal_minor: minWithdrawalMinor }, 400);
     }
 
     // Check for unresolved fraud flags before allowing payout.

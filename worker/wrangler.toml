@@ -3,9 +3,9 @@ main = "src/index.js"
 compatibility_date = "2025-01-01"
 account_id = "" # daniellancce1 account id — fill in
 
-kv_namespaces = [
-  { binding = "FRAUD_KV", id = "dev_fraud_kv_id" } # create via `wrangler kv:namespace create FRAUD_KV` in prod
-]
+[[kv_namespaces]]
+binding = "FRAUD_KV"
+id = "0edb644697cf4d26b31e427a05df9067" # create via `wrangler kv:namespace create FRAUD_KV` in prod
 
 [triggers]
 crons = ["*/15 * * * *", "0 * * * *", "0 2 * * *", "0 */6 * * *"]
