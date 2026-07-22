@@ -1,7 +1,7 @@
 name = "earnflow-api"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
-account_id = "" # daniellancce1 account id — fill in
+account_id = "cf50e3848f87a61d4877165ee1ece624" # daniellancce1 account id
 
 [[kv_namespaces]]
 binding = "FRAUD_KV"
